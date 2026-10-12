@@ -1,12 +1,9 @@
-// Nutzer-Meldungen zur Verfügbarkeit von Monster Ultra White je Laden.
-// Speicher: Upstash Redis (Vercel Marketplace), angesprochen über die REST-API.
-import { redisConfig, redis, overLimit, NOT_CONFIGURED, parseBody } from "../lib/redis.js";
+// Nutzer-Meldungen zur Verfügbarkeit einer Monster-Sorte je Laden (Standard: Ultra White).
+import { getSql, ensureSchema, ipHash, overLimit, NOT_CONFIGURED, parseBody } from "../lib/db.js";
 
-const STATUSES = new Set(["out", "ok"]); // out = kein White da, ok = White da
-const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // Meldungen älter als 7 Tage zählen nicht mehr
-const KEEP_PER_STORE = 10;
-const RATE_LIMIT = 30; // Meldungen pro IP und Stunde
-const HASH = "mp:stores";
+const STATUSES = new Set(["out", "ok"]); // out = Sorte nicht da, ok = Sorte da
+const FLAVOR_RE = /^[a-z0-9-]{2,30}$/;
+const RATE_LIMIT = 30;
 
 const clean = (s, max) => String(s ?? "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, max);
 
@@ -15,51 +12,60 @@ export function validate(body) {
   const { storeId, name, lat, lon, status } = body;
   if (!/^(node|way|relation)\/\d{1,15}$/.test(String(storeId))) return "Ungültiger Laden.";
   if (!STATUSES.has(status)) return "Ungültiger Status.";
+  if (!FLAVOR_RE.test(String(body.flavor ?? "ultra-white"))) return "Ungültige Sorte.";
   const la = Number(lat), lo = Number(lon);
-  // grob Deutschland plus Nachbarn
   if (!(la > 45 && la < 56 && lo > 4 && lo < 17)) return "Ort außerhalb des unterstützten Gebiets.";
   if (!clean(name, 80)) return "Name fehlt.";
   return null;
 }
 
-export function summarize(store, now = Date.now()) {
-  const recent = (store.reports || []).filter((r) => now - r.ts < MAX_AGE_MS);
-  if (!recent.length) return null;
-  const last = recent[0];
+export function toStore(r) {
   return {
-    id: store.id,
-    name: store.name,
-    brand: store.brand || "",
-    lat: store.lat,
-    lon: store.lon,
-    status: last.status,
-    lastTs: last.ts,
-    out: recent.filter((r) => r.status === "out").length,
-    ok: recent.filter((r) => r.status === "ok").length,
+    id: r.store_id,
+    flavor: r.flavor,
+    name: r.name,
+    brand: r.brand || "",
+    lat: Number(r.lat),
+    lon: Number(r.lon),
+    status: r.status,
+    lastTs: new Date(r.last_ts).getTime(),
+    out: Number(r.out),
+    ok: Number(r.ok),
   };
 }
 
-export async function handle(req, res, { env = process.env, fetchImpl = fetch, now = Date.now() } = {}) {
-  const cfg = redisConfig(env);
-  if (!cfg) {
+const SUMMARY = `
+  SELECT store_id, flavor,
+         (array_agg(name   ORDER BY ts DESC))[1] AS name,
+         (array_agg(brand  ORDER BY ts DESC))[1] AS brand,
+         (array_agg(lat    ORDER BY ts DESC))[1] AS lat,
+         (array_agg(lon    ORDER BY ts DESC))[1] AS lon,
+         (array_agg(status ORDER BY ts DESC))[1] AS status,
+         max(ts) AS last_ts,
+         count(*) FILTER (WHERE status = 'out') AS out,
+         count(*) FILTER (WHERE status = 'ok')  AS ok
+    FROM mp_reports
+   WHERE ts > now() - interval '7 days' AND flavor = $1`;
+
+export async function handle(req, res, { env = process.env, q: injected } = {}) {
+  const q = injected || (await getSql(env));
+  if (!q) {
     res.status(503).json({ error: NOT_CONFIGURED });
     return;
   }
   try {
+    await ensureSchema(q);
     if (req.method === "GET") {
-      const [flat] = await redis(cfg, [["HGETALL", HASH]], fetchImpl);
-      const stores = [];
-      for (let i = 0; i < (flat || []).length; i += 2) {
-        try {
-          const s = summarize(JSON.parse(flat[i + 1]), now);
-          if (s) stores.push(s);
-        } catch {}
+      const flavor = String(req.query?.flavor || "ultra-white");
+      if (!FLAVOR_RE.test(flavor)) {
+        res.status(400).json({ error: "Ungültige Sorte." });
+        return;
       }
-      res.setHeader("Cache-Control", "s-maxage=20, stale-while-revalidate=60");
-      res.status(200).json({ stores });
+      const rows = await q(`${SUMMARY} GROUP BY store_id, flavor`, [flavor]);
+      res.setHeader("Cache-Control", "s-maxage=15, stale-while-revalidate=60");
+      res.status(200).json({ flavor, stores: rows.map(toStore) });
       return;
     }
-
     if (req.method === "POST") {
       const body = parseBody(req);
       const err = validate(body);
@@ -67,31 +73,26 @@ export async function handle(req, res, { env = process.env, fetchImpl = fetch, n
         res.status(400).json({ error: err });
         return;
       }
-      if (await overLimit(cfg, req, RATE_LIMIT, fetchImpl)) {
+      const ip = ipHash(req);
+      if (await overLimit(q, ip, RATE_LIMIT)) {
         res.status(429).json({ error: "Zu viele Meldungen. Versuch es später nochmal." });
         return;
       }
+      const flavor = String(body.flavor || "ultra-white");
       const id = String(body.storeId);
-      const [raw] = await redis(cfg, [["HGET", HASH, id]], fetchImpl);
-      let store = null;
-      try { store = raw ? JSON.parse(raw) : null; } catch {}
-      store = store || { id, reports: [] };
-      store.name = clean(body.name, 80);
-      store.brand = clean(body.brand, 40);
-      store.lat = Math.round(Number(body.lat) * 1e5) / 1e5;
-      store.lon = Math.round(Number(body.lon) * 1e5) / 1e5;
-      store.reports = [{ status: body.status, ts: now }, ...(store.reports || [])]
-        .filter((r) => now - r.ts < MAX_AGE_MS)
-        .slice(0, KEEP_PER_STORE);
-      await redis(cfg, [["HSET", HASH, id, JSON.stringify(store)]], fetchImpl);
-      res.status(200).json({ store: summarize(store, now) });
+      await q(
+        `INSERT INTO mp_reports (store_id, flavor, name, brand, lat, lon, status, ip) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [id, flavor, clean(body.name, 80), clean(body.brand, 40), Math.round(Number(body.lat) * 1e5) / 1e5, Math.round(Number(body.lon) * 1e5) / 1e5, body.status, ip]
+      );
+      const [row] = await q(`${SUMMARY} AND store_id = $2 GROUP BY store_id, flavor`, [flavor, id]);
+      res.status(200).json({ store: row ? toStore(row) : null });
       return;
     }
-
     res.setHeader("Allow", "GET, POST");
     res.status(405).json({ error: "Methode nicht erlaubt." });
   } catch (e) {
-    res.status(500).json({ error: e.message || "Unbekannter Fehler" });
+    console.error(e);
+    res.status(500).json({ error: "Datenbankfehler: " + (e.message || "unbekannt") });
   }
 }
 

@@ -57,6 +57,9 @@
   nav.tabs button { font: 700 15px var(--sans); border: 0; background: transparent; color: var(--muted); padding: 9px 20px; border-radius: 10px; cursor: pointer; }
   nav.tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .fsel { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
+  .flavor-select { font: 600 14px var(--sans); padding: 8px 10px; border-radius: 12px; border: 1px solid var(--ink); background: var(--card); color: var(--ink); max-width: 60vw; }
   .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; background: var(--card); }
   .seg button { font: 600 14px var(--sans); border: 0; background: transparent; color: var(--muted); padding: 8px 14px; cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
@@ -177,7 +180,7 @@
   <header class="top">
     <div class="brand">
       <h1>Monster-<br>Preise <span class="w">White</span></h1>
-      <p>Monster Ultra White im Vergleich: Prospekt-Angebote in deiner Nähe und Normalpreise, die Nutzer melden. Pro Dose, Pfand nicht eingerechnet.</p>
+      <p>Monster-Preise im Vergleich, Ultra White zuerst: Prospekt-Angebote in deiner Nähe und Normalpreise pro Supermarkt. Pro Dose, Pfand nicht eingerechnet.</p>
     </div>
     <form class="zip" id="zipForm">
       <label for="zip">Postleitzahl</label>
@@ -197,12 +200,15 @@
 
     <div class="controls">
       <div class="ctrl-row">
-        <div class="seg" role="group" aria-label="Sorte">
-          <button type="button" data-v="white" aria-pressed="true">Ultra White</button>
-          <button type="button" data-v="all" aria-pressed="false">Alle Sorten</button>
+        <div class="filters">
+          <label class="fsel">Sorte <select id="flavor" class="flavor-select"></select></label>
+          <div class="seg" role="group" aria-label="Zeitraum" id="weekSeg">
+            <button type="button" data-w="this" aria-pressed="true">Diese Woche</button>
+            <button type="button" data-w="next" aria-pressed="false">Nächste Woche</button>
+            <button type="button" data-w="all" aria-pressed="false">Alle</button>
+          </div>
         </div>
         <div class="opts">
-          <label><input type="checkbox" id="onlyActive"> nur heute gültig</label>
           <label>Sortieren
             <select id="sort">
               <option value="perCan">pro Dose</option>
@@ -216,9 +222,9 @@
       <div class="chips" id="chips" role="group" aria-label="Händler filtern"></div>
     </div>
 
-    <h2 class="sec">Preisvergleich <span>Ultra White 0,5 l, pro Dose</span></h2>
+    <h2 class="sec">Preisvergleich <span id="cmpSub">Ultra White 0,5 l, pro Dose</span></h2>
     <div class="list cmp" id="cmp" aria-live="polite"></div>
-    <p class="hint" id="cmpHint">„Normalpreis“ sind Regalpreise, die Nutzer für Ultra White melden (Mittelwert der letzten 30 Tage). Siehst du einen Preis im Laden, melde ihn mit „Preis melden“.</p>
+    <p class="hint" id="cmpHint">„Normalpreis“ ist der Regalpreis einer 0,5-l-Dose: zuerst aus Nutzer-Meldungen der letzten 30 Tage (Median), sonst laut Prospekt, sonst ein Richtwert von supermarktcheck.de (zuletzt gemeldet, ohne Datum). Edeka-Preise sind je Markt verschieden. Siehst du einen Preis im Laden, melde ihn mit „Preis melden“.</p>
 
     <h2 class="sec">Prospekt-Angebote <span id="offerCount"></span></h2>
     <main class="list" id="list" aria-live="polite"></main>
@@ -227,13 +233,14 @@
   <!-- KARTE -->
   <section id="view-karte" role="tabpanel" aria-labelledby="tab-karte" hidden>
     <div class="map-head">
-      <p>Tipp auf einen Laden und melde, ob es dort gerade <b>Ultra White</b> gibt. Meldungen gelten 7 Tage.</p>
+      <p>Tipp auf einen Laden und melde, ob es dort gerade <b id="mapFlavor">Ultra White</b> gibt. Meldungen gelten 7 Tage.</p>
+      <label class="fsel">Sorte <select id="flavorMap" class="flavor-select"></select></label>
       <button class="btn ghost" id="locate" type="button">Mein Standort</button>
     </div>
     <div id="map" role="region" aria-label="Karte der Läden"></div>
     <div class="legend">
-      <span><i class="dot" style="background:var(--out)"></i>Kein White gemeldet</span>
-      <span><i class="dot" style="background:var(--ok)"></i>White da</span>
+      <span><i class="dot" style="background:var(--out)"></i><span class="lg-out">Ausverkauft gemeldet</span></span>
+      <span><i class="dot" style="background:var(--ok)"></i><span class="lg-ok">Vorrätig gemeldet</span></span>
       <span><i class="dot" style="background:var(--none)"></i>Noch keine Meldung</span>
     </div>
     <div class="map-note" id="mapNote" aria-live="polite"></div>
@@ -285,21 +292,56 @@
   /* ---------- Preise ---------- */
   let offers = [];
   let excluded = new Set();
-  const state = { variant: "white", sort: store.get("mp.sort") || "perCan", onlyActive: store.get("mp.active") === "1" };
+  const FLAVORS = [
+    ["ultra-white", "Ultra White", "White"], ["all", "Alle Sorten", "Monster"],
+    ["original", "Original (grün)", "Original"], ["zero-sugar", "Zero Sugar", "Zero Sugar"],
+    ["ultra-paradise", "Ultra Paradise", "Paradise"], ["ultra-rosa", "Ultra Rosá", "Rosá"],
+    ["ultra-fiesta", "Ultra Fiesta Mango", "Fiesta"], ["ultra-violet", "Ultra Violet", "Violet"],
+    ["ultra-watermelon", "Ultra Watermelon", "Watermelon"], ["ultra-strawberry", "Ultra Strawberry Dreams", "Strawberry"],
+    ["ultra-citron", "Ultra Citron", "Citron"], ["ultra-gold", "Ultra Gold", "Gold"], ["ultra-blue", "Ultra Blue Hawaiian", "Blue Hawaiian"],
+    ["mango-loco", "Juiced Mango Loco", "Mango Loco"], ["pipeline-punch", "Juiced Pipeline Punch", "Pipeline Punch"],
+    ["pacific-punch", "Juiced Pacific Punch", "Pacific Punch"], ["khaotic", "Juiced Khaotic", "Khaotic"],
+    ["monarch", "Juiced Monarch", "Monarch"], ["bad-apple", "Juiced Bad Apple", "Bad Apple"],
+    ["aussie-lemonade", "Aussie Lemonade", "Aussie Lemonade"], ["ripper", "Juiced Ripper", "Ripper"],
+    ["lewis-hamilton", "Lewis Hamilton Zero", "LH44"], ["assault", "Assault", "Assault"],
+    ["nitro", "Nitro", "Nitro"], ["reserve", "Reserve", "Reserve"], ["rehab", "Rehab", "Rehab"],
+  ];
+  const flavorLabel = (k) => (FLAVORS.find((f) => f[0] === k) || [k, k])[1];
+  const flavorShort = (k) => (FLAVORS.find((f) => f[0] === k) || [k, k, k])[2];
+  // Richtwerte (zuletzt gemeldet auf supermarktcheck.de, ohne Datum; abgerufen 12.10.2026)
+  const REFERENCE = { rewe: 1.64, "aldi-sued": 1.49, kaufland: 1.49, netto: 1.11, lidl: 1.49 };
+
+  // Sorte startet immer mit Ultra White
+  const state = { flavor: "ultra-white", week: "this", sort: store.get("mp.sort") || "perCan" };
 
   const zipInput = $("#zip");
   zipInput.value = new URLSearchParams(location.search).get("plz") || store.get("mp.zip") || "76137";
   $("#sort").value = state.sort;
-  $("#onlyActive").checked = state.onlyActive;
+  document.querySelectorAll(".flavor-select").forEach((sel) => {
+    sel.innerHTML = FLAVORS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("");
+    sel.value = state.flavor;
+    sel.addEventListener("change", () => setFlavor(sel.value));
+  });
+  function setFlavor(k) {
+    state.flavor = k;
+    document.querySelectorAll(".flavor-select").forEach((x) => (x.value = k));
+    const mapK = k === "all" ? "ultra-white" : k;
+    $("#flavorMap").value = mapK;
+    $("#mapFlavor").textContent = flavorLabel(mapK);
+    $(".lg-out").textContent = `Kein ${flavorShort(mapK)} gemeldet`;
+    $(".lg-ok").textContent = `${flavorShort(mapK)} da`;
+    render();
+    if (map) reloadReports();
+  }
+  $("#weekSeg").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    state.week = b.dataset.w;
+    $("#weekSeg").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  }));
 
   $("#zipForm").addEventListener("submit", (e) => { e.preventDefault(); load(zipInput.value.trim()); if (map) centerOnZip(zipInput.value.trim()); });
   $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; store.set("mp.sort", state.sort); render(); });
-  $("#onlyActive").addEventListener("change", (e) => { state.onlyActive = e.target.checked; store.set("mp.active", e.target.checked ? "1" : "0"); render(); });
-  document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
-    state.variant = b.dataset.v;
-    document.querySelectorAll(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    render();
-  }));
+
 
   const CHAINS = new Set(["aldi-sued", "aldi-nord", "edeka", "kaufland", "lidl", "netto", "norma", "penny", "rewe", "globus"]);
   let prices = {};          // chain -> {median, count, last, lastTs}
@@ -341,8 +383,23 @@
   }
   let offersError = null;
 
-  const variantOk = (o) => state.variant === "all" || o.variant === "white" || o.variant === "assorted";
-  const activeOk = (o) => !state.onlyActive || o.active;
+  const flavorsOf = (o) => o.flavors || (o.variant === "white" ? ["ultra-white"] : ["*"]);
+  const variantOk = (o) => state.flavor === "all" || flavorsOf(o).includes(state.flavor) || flavorsOf(o).includes("*");
+  // Woche = Montag 0:00 bis Sonntag 23:59 (lokale Zeit)
+  function weekRange(offset) {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 7 * offset);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 7); sun.setMilliseconds(-1);
+    return [mon, sun];
+  }
+  const activeOk = (o) => {
+    if (state.week === "all") return true;
+    const [from, to] = weekRange(state.week === "next" ? 1 : 0);
+    const vf = o.validFrom ? new Date(o.validFrom) : new Date(0);
+    const vt = o.validTo ? new Date(o.validTo) : new Date(8e15);
+    const start = state.week === "this" ? new Date() : from; // diese Woche: nur was noch gilt
+    return vf <= to && vt >= start;
+  };
 
   function buildChips(base) {
     const counts = new Map();
@@ -374,8 +431,11 @@
     if (!o.active && from > new Date()) return `<span class="badge soon">ab ${dfmt.format(from)}</span>`;
     return `<span class="badge">bis ${dfmt.format(to)}</span>`;
   }
-  const variantBadge = (o) => o.variant === "white" ? '<span class="badge white">Ultra White</span>'
-    : o.variant === "assorted" ? '<span class="badge">versch. Sorten</span>' : "";
+  const variantBadge = (o) => {
+    const f = flavorsOf(o);
+    const named = f.filter((x) => x !== "*").map((k) => `<span class="badge ${k === "ultra-white" ? "white" : ""}">${esc(flavorShort(k))}</span>`).join("");
+    return named + (f.includes("*") ? '<span class="badge">versch. Sorten</span>' : "");
+  };
   function ago(ts) {
     const m = Math.round((Date.now() - ts) / 60000);
     if (m < 60) return `vor ${Math.max(1, m)} Min.`;
@@ -390,13 +450,14 @@
     const keys = new Set([...ALWAYS, "norma", ...base.map((o) => o.rk), ...Object.keys(prices)]);
     return [...keys].filter((k) => !excluded.has(k)).map((k) => {
       const own = base.filter((o) => o.rk === k && o.perCan != null).sort(sorters.perCan);
-      const offerNow = own.find((o) => o.active);
+      const offerNow = state.week === "this" ? own.find((o) => o.active) : own[0];
       const offer = offerNow || own[0] || null;
       const fromOffer = own.find((o) => o.oldPrice && o.cans === 1);
-      const normal = prices[k] || (fromOffer ? { median: fromOffer.oldPrice, count: 0, prospekt: true } : null);
+      const normal = prices[k] || (fromOffer ? { median: fromOffer.oldPrice, count: 0, prospekt: true } : null)
+        || (REFERENCE[k] ? { median: REFERENCE[k], count: 0, reference: true } : null);
       const cands = [];
       if (offerNow) cands.push({ v: offerNow.perCan, src: "Angebot" });
-      if (normal) cands.push({ v: normal.median, src: "Normalpreis" });
+      if (normal) cands.push({ v: normal.median, src: normal.reference ? "Richtwert" : "Normalpreis" });
       cands.sort((a, b) => a.v - b.v);
       const any = offers.find((o) => o.rk === k);
       return { k, label: retailerLabel(k, any ? any.retailer : k), offer, normal, best: cands[0] || null };
@@ -412,7 +473,7 @@
         : `<div class="v na">kein Angebot</div>`;
       const n = r.normal;
       const normalHtml = n
-        ? `<div class="v">${eur.format(n.median)}</div><div class="s">${n.prospekt ? "laut Prospekt" : `${n.count} ${n.count === 1 ? "Meldung" : "Meldungen"} · zuletzt ${ago(n.lastTs)}`}</div>`
+        ? `<div class="v">${eur.format(n.median)}</div><div class="s">${n.prospekt ? "laut Prospekt" : n.reference ? "Richtwert, supermarktcheck.de" : `${n.count} ${n.count === 1 ? "Meldung" : "Meldungen"} · zuletzt ${ago(n.lastTs)}`}</div>`
         : `<div class="v na">${pricesReady === false ? "Meldungen nicht verfügbar" : "noch nicht gemeldet"}</div>`;
       const canReport = CHAINS.has(r.k) && pricesReady !== false;
       const form = openForms.has(r.k)
@@ -454,6 +515,7 @@
 
   function render() {
     const base = offers.filter(variantOk).filter(activeOk);
+    $("#cmpSub").textContent = `${state.flavor === "all" ? "alle Sorten" : flavorLabel(state.flavor)} · 0,5 l · pro Dose · ${state.week === "this" ? "diese Woche" : state.week === "next" ? "nächste Woche" : "alle Angebote"}`;
     buildChips(base);
     const rows = compareRows(base);
     const top = renderCompare(rows);
@@ -461,10 +523,10 @@
     const best = $("#best");
     if (top) {
       const o = top.best.src === "Angebot" ? top.offer : null;
-      const tag = state.variant !== "white" ? "Günstigster Preis pro Dose" : "Günstigster Preis für Ultra White";
+      const tag = state.flavor === "all" ? "Günstigster Preis pro Dose" : `Günstigster Preis für ${flavorLabel(state.flavor)}`;
       const what = o
         ? `${esc(o.title)} · ${eur.format(o.price)}${o.validTo ? " · bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""}`
-        : top.normal.prospekt ? "Normalpreis laut Prospekt" : `Normalpreis aus ${top.normal.count} ${top.normal.count === 1 ? "Nutzer-Meldung" : "Nutzer-Meldungen"}`;
+        : top.normal.prospekt ? "Normalpreis laut Prospekt" : top.normal.reference ? "Richtwert (supermarktcheck.de), melde den aktuellen Preis" : `Normalpreis aus ${top.normal.count} ${top.normal.count === 1 ? "Nutzer-Meldung" : "Nutzer-Meldungen"}`;
       best.hidden = false;
       best.className = "best";
       best.innerHTML = `
@@ -484,7 +546,7 @@
       return;
     }
     if (!list.length) {
-      const hint = state.variant === "white" ? "Gerade kein Angebot mit Ultra White. Schau unter „Alle Sorten“." : "Nimm einen Filter raus.";
+      const hint = state.week !== "all" ? "Für diesen Zeitraum gibt es kein passendes Angebot. Probier „Alle“ beim Zeitraum." : state.flavor !== "all" ? `Gerade kein Angebot mit ${esc(flavorLabel(state.flavor))}. Schau unter „Alle Sorten“.` : "Nimm einen Filter raus.";
       $("#list").innerHTML = `<div class="state"><strong>Nichts gefunden</strong>${hint}</div>`;
       return;
     }
@@ -529,19 +591,20 @@
   function popupHtml(id) {
     const p = places.get(id) || reports.get(id);
     const r = reports.get(id);
-    const mine = Number(store.get("mp.rep." + id) || 0);
+    const fl = mapFlavor(), short = esc(flavorShort(fl));
+    const mine = Number(store.get("mp.rep." + fl + "." + id) || 0);
     const locked = Date.now() - mine < 60 * 60 * 1000;
     let st = "Noch keine Meldung.";
     if (r) {
-      st = `Zuletzt: <b class="${r.status}">${r.status === "out" ? "Kein White" : "White da"}</b> · ${ago(r.lastTs)}<br><span class="sub">7 Tage: ${r.out}× kein White, ${r.ok}× da</span>`;
+      st = `Zuletzt: <b class="${r.status}">${r.status === "out" ? "Kein " + short : short + " da"}</b> · ${ago(r.lastTs)}<br><span class="sub">7 Tage: ${r.out}× kein ${short}, ${r.ok}× da</span>`;
     }
     return `<div class="pop" data-id="${esc(id)}">
       <h3>${esc(p.name)}</h3>
       ${p.brand && p.brand !== p.name ? `<div class="sub">${esc(p.brand)}</div>` : ""}
       <div class="st">${st}</div>
       ${reportsReady ? `<div class="acts">
-        <button type="button" class="ok" data-s="ok" ${locked ? "disabled" : ""}>White da</button>
-        <button type="button" class="out" data-s="out" ${locked ? "disabled" : ""}>Kein White</button>
+        <button type="button" class="ok" data-s="ok" ${locked ? "disabled" : ""}>${short} da</button>
+        <button type="button" class="out" data-s="out" ${locked ? "disabled" : ""}>Kein ${short}</button>
       </div>
       <div class="msg">${locked ? "Danke! Du kannst hier in einer Stunde wieder melden." : ""}</div>` : '<div class="msg">Meldungen sind gerade nicht verfügbar.</div>'}
     </div>`;
@@ -565,9 +628,16 @@
     if (r) m.bringToFront();
   }
 
+  const mapFlavor = () => (state.flavor === "all" ? "ultra-white" : state.flavor);
+  function reloadReports() {
+    const old = [...reports.keys()];
+    reports = new Map();
+    old.forEach((id) => { if (places.has(id)) upsertMarker(id); else { markers.get(id)?.remove(); markers.delete(id); } });
+    loadReports();
+  }
   async function loadReports() {
     try {
-      const r = await fetch("/api/reports");
+      const r = await fetch("/api/reports?flavor=" + encodeURIComponent(mapFlavor()));
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || r.status);
       reports = new Map(data.stores.map((s) => [s.id, s]));
@@ -575,7 +645,7 @@
       reports.forEach((_, id) => upsertMarker(id));
     } catch (e) {
       reportsReady = false;
-      note(String(e.message).includes("nicht eingerichtet") ? "Melden ist noch nicht freigeschaltet (Speicher fehlt). Die Läden siehst du trotzdem." : "Meldungen konnten nicht geladen werden: " + e.message);
+      note(String(e.message).includes("nicht eingerichtet") ? "Melden ist noch nicht freigeschaltet (Datenbank fehlt). Die Läden siehst du trotzdem." : "Meldungen konnten nicht geladen werden: " + e.message);
     }
   }
 
@@ -630,11 +700,11 @@
       const r = await fetch("/api/reports", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ storeId: id, name: p.name, brand: p.brand, lat: p.lat, lon: p.lon, status }),
+        body: JSON.stringify({ storeId: id, name: p.name, brand: p.brand, lat: p.lat, lon: p.lon, status, flavor: mapFlavor() }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || r.status);
-      store.set("mp.rep." + id, String(Date.now()));
+      store.set("mp.rep." + mapFlavor() + "." + id, String(Date.now()));
       if (data.store) reports.set(id, data.store);
       upsertMarker(id);
     } catch (e) {

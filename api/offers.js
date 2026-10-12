@@ -59,14 +59,49 @@ export function isMonster(o) {
   return unit === "l" || /energy|dose|0[,.]5\s*-?\s*l|ultra|drink/.test(hay);
 }
 
-// "white": Ultra White ausdrücklich genannt; "assorted": "versch. Sorten" o. Ä., White wahrscheinlich dabei;
-// "other": nur andere Sorten genannt.
-export function detectVariant(o) {
+// Sorten-Erkennung. Ergebnis: Liste von Sorten-Schlüsseln, oder ["*"] wenn "versch. Sorten" bzw. keine Sorte genannt.
+export const FLAVORS = [
+  ["ultra-white", /ultra\s*white|zero\s*ultra|ultra\s*zero|\bwhite\b/],
+  ["zero-sugar", /zero\s*(sugar|zucker)/],
+  ["ultra-paradise", /paradise/],
+  ["ultra-rosa", /\brosa\b/],
+  ["ultra-fiesta", /fiesta/],
+  ["ultra-violet", /violet/],
+  ["ultra-watermelon", /watermelon|wassermelone/],
+  ["ultra-strawberry", /strawberry|erdbeer/],
+  ["ultra-citron", /citron/],
+  ["ultra-gold", /\bgold\b/],
+  ["ultra-blue", /blue\s*hawaiian|ultra\s*blue/],
+  ["mango-loco", /mango/],
+  ["pipeline-punch", /pipeline/],
+  ["pacific-punch", /pacific/],
+  ["khaotic", /khaotic/],
+  ["monarch", /monarch/],
+  ["bad-apple", /bad\s*apple/],
+  ["aussie-lemonade", /aussie|lemonade/],
+  ["ripper", /ripper/],
+  ["lewis-hamilton", /hamilton|lh\s*44/],
+  ["assault", /assault/],
+  ["nitro", /nitro/],
+  ["reserve", /reserve/],
+  ["rehab", /rehab/],
+  ["original", /original|classic|\bgr(ü|ue)n\b/],
+];
+
+export function detectFlavors(o) {
   const t = `${o?.product?.name ?? ""} ${o?.description ?? ""}`.toLowerCase();
-  if (/white|zero\s*ultra|ultra\s*zero/.test(t)) return "white";
-  if (/versch|sortiert|sorten|div\.|diverse|verschiedene|auswahl/.test(t)) return "assorted";
-  if (/ultra|mango|pipeline|punch|juiced|rehab|lewis|paradise|aussie|khaotic|java|nitro|reserve|lemonade|original|zero sugar|zero/.test(t)) return "other";
-  return "assorted";
+  const assorted = /versch|sortiert|sorten|div\.|diverse|verschiedene|auswahl/.test(t);
+  const hits = FLAVORS.filter(([, re]) => re.test(t)).map(([k]) => k);
+  if (assorted || !hits.length) return ["*", ...hits];
+  return hits;
+}
+
+// Kompatibel zur alten Logik: white | assorted | other
+export function detectVariant(o) {
+  const f = detectFlavors(o);
+  if (f.includes("ultra-white")) return "white";
+  if (f.includes("*")) return "assorted";
+  return "other";
 }
 
 export function parseNormalPrice(text = "") {
@@ -114,6 +149,7 @@ export function normalize(o, now = new Date()) {
     cans,
     loyalty: !!o.requiresLoyalityMembership || /plus[\s-]*app|mit (der )?app|payback|kundenkarte|lidl plus|k-card|kaufland card/i.test(o.description || ""),
     variant: detectVariant(o),
+    flavors: detectFlavors(o),
     validFrom: span?.from ?? null,
     validTo: span?.to ?? null,
     active: !!current,

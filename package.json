@@ -4,5 +4,13 @@
   "private": true,
   "type": "module",
   "description": "Vergleicht aktuelle Monster-Energy-Angebote aus Supermarkt-Prospekten per PLZ.",
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  },
+  "scripts": {
+    "test": "node test/run.mjs && node test/shops.mjs && node test/db.mjs"
+  }
 }
