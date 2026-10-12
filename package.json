@@ -1,0 +1,8 @@
+{
+  "name": "monster-preise",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vergleicht aktuelle Monster-Energy-Angebote aus Supermarkt-Prospekten per PLZ.",
+  "engines": { "node": ">=18" }
+}

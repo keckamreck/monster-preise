@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monster-Preise</title>
+<meta name="description" content="Aktuelle Monster-Energy-Angebote aus den Prospekten in deiner Nähe, sortiert nach Preis pro Dose.">
+<meta name="theme-color" content="#0b0d0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d0a'/%3E%3Cpath d='M9 7v18M16 7v18M23 7v18' stroke='%23c6ff3d' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0d0a;
+    --panel: #13160f;
+    --panel-2: #1a1e15;
+    --line: #2a3022;
+    --ink: #eef3e6;
+    --muted: #97a088;
+    --acid: #c6ff3d;
+    --acid-ink: #0b0d0a;
+    --warn: #ffb347;
+    --display: "Big Shoulders Display", Impact, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --sans: "Inter Tight", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.45 var(--sans);
+    min-height: 100vh;
+    background-image: radial-gradient(1200px 500px at 85% -10%, rgba(198,255,61,.08), transparent 60%);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px 16px 64px; }
+
+  header { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-end; justify-content: space-between; }
+  .brand h1 {
+    font: 900 clamp(46px, 9vw, 84px)/.86 var(--display);
+    letter-spacing: .01em; text-transform: uppercase; margin: 0;
+  }
+  .brand h1 span { color: var(--acid); }
+  .brand p { margin: 10px 0 0; color: var(--muted); max-width: 46ch; }
+
+  form.zip { display: flex; gap: 8px; align-items: stretch; }
+  form.zip label { position: absolute; left: -9999px; }
+  form.zip input {
+    width: 8.5ch; font: 600 22px var(--mono); letter-spacing: .08em;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; outline: none;
+  }
+  form.zip input:focus { border-color: var(--acid); box-shadow: 0 0 0 3px rgba(198,255,61,.18); }
+  button, .chip {
+    font: 600 14px var(--sans); cursor: pointer; border-radius: 10px;
+  }
+  form.zip button {
+    background: var(--acid); color: var(--acid-ink); border: 0; padding: 0 18px;
+  }
+  form.zip button:focus-visible, .chip:focus-visible, select:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+
+  .best {
+    margin-top: 32px; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+    background: var(--acid); color: var(--acid-ink); border-radius: 18px; padding: 20px 24px;
+  }
+  .best .tag { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .12em; }
+  .best .big { font: 900 clamp(54px, 12vw, 96px)/.85 var(--display); }
+  .best .big small { font-size: .38em; margin-left: 4px; }
+  .best .who { font: 900 clamp(26px, 5vw, 40px)/1 var(--display); text-transform: uppercase; }
+  .best .what { margin-top: 6px; font-size: 14px; opacity: .8; }
+  .best img { width: 92px; height: 92px; object-fit: contain; background: #fff; border-radius: 12px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin: 28px 0 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 12px; font-weight: 500;
+  }
+  .chip[aria-pressed="true"] { color: var(--acid-ink); background: var(--ink); border-color: var(--ink); }
+  .opts { display: flex; gap: 14px; align-items: center; color: var(--muted); font-size: 14px; }
+  .opts label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .opts input { accent-color: var(--acid); }
+  select {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: 14px var(--sans);
+  }
+
+  .list { border-top: 1px solid var(--line); }
+  .row {
+    display: grid; grid-template-columns: 56px 1fr auto auto; gap: 16px; align-items: center;
+    padding: 14px 4px; border-bottom: 1px solid var(--line);
+  }
+  .row img { width: 56px; height: 56px; object-fit: contain; background: #fff; border-radius: 10px; }
+  .row .retailer { font: 900 22px/1 var(--display); text-transform: uppercase; letter-spacing: .02em; }
+  .row .desc { color: var(--muted); font-size: 13.5px; margin-top: 4px; overflow-wrap: anywhere; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .badge { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.save { color: var(--acid); border-color: rgba(198,255,61,.45); }
+  .badge.club { color: var(--warn); border-color: rgba(255,179,71,.45); }
+  .badge.soon { color: var(--ink); }
+  .price { text-align: right; font-family: var(--mono); }
+  .price .total { font-size: 18px; font-weight: 600; }
+  .price .old { color: var(--muted); text-decoration: line-through; font-size: 13px; }
+  .percan { text-align: right; min-width: 92px; }
+  .percan .v { font: 900 34px/1 var(--display); color: var(--acid); }
+  .percan .l { font: 12px var(--mono); color: var(--muted); }
+  .row.top .percan .v { text-shadow: 0 0 18px rgba(198,255,61,.35); }
+
+  .state { padding: 48px 0; text-align: center; color: var(--muted); }
+  .state strong { display: block; color: var(--ink); font: 900 28px var(--display); text-transform: uppercase; margin-bottom: 6px; }
+  .skeleton { height: 84px; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, transparent, rgba(255,255,255,.03), transparent); background-size: 200% 100%; animation: sh 1.2s infinite; }
+  @keyframes sh { to { background-position: -200% 0; } }
+
+  footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+  footer a { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .best { grid-template-columns: 1fr auto; }
+    .best img { display: none; }
+    .row { grid-template-columns: 44px 1fr auto; gap: 12px; }
+    .row img { width: 44px; height: 44px; }
+    .row .price { grid-column: 2; text-align: left; display: flex; gap: 10px; align-items: baseline; }
+    .row .percan { grid-row: 1; grid-column: 3; }
+  }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Monster<span>-</span><br>Preise</h1>
+      <p>Aktuelle Monster-Energy-Angebote aus den Prospekten in deiner Nähe. Günstigster Preis pro Dose zuerst, Pfand nicht eingerechnet.</p>
+    </div>
+    <form class="zip" id="zipForm">
+      <label for="zip">Postleitzahl</label>
+      <input id="zip" inputmode="numeric" pattern="\d{5}" maxlength="5" placeholder="PLZ" autocomplete="postal-code" required>
+      <button type="submit">Suchen</button>
+    </form>
+  </header>
+
+  <section id="best" hidden></section>
+
+  <div class="controls" id="controls" hidden>
+    <div class="chips" id="chips" role="group" aria-label="Händler filtern"></div>
+    <div class="opts">
+      <label><input type="checkbox" id="onlyActive"> nur heute gültig</label>
+      <label>Sortieren
+        <select id="sort">
+          <option value="perCan">pro Dose</option>
+          <option value="price">Gesamtpreis</option>
+          <option value="retailer">Händler</option>
+          <option value="validTo">läuft bald ab</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <main class="list" id="list" aria-live="polite"></main>
+
+  <footer id="foot">
+    Daten: Prospekt-Angebote über marktguru.de, ohne Gewähr. Preis pro Dose ist aus dem Literpreis berechnet (Standarddose 0,5 l, sofern nicht anders angegeben). Normalpreise ohne Angebot sind nicht enthalten.
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const eur = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+  const dfmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  let offers = [];
+  let excluded = new Set();
+  const state = { sort: store.get("mp.sort") || "perCan", onlyActive: store.get("mp.active") === "1" };
+
+  const zipInput = $("#zip");
+  zipInput.value = new URLSearchParams(location.search).get("plz") || store.get("mp.zip") || "76137";
+  $("#sort").value = state.sort;
+  $("#onlyActive").checked = state.onlyActive;
+
+  $("#zipForm").addEventListener("submit", (e) => { e.preventDefault(); load(zipInput.value.trim()); });
+  $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; store.set("mp.sort", state.sort); render(); });
+  $("#onlyActive").addEventListener("change", (e) => { state.onlyActive = e.target.checked; store.set("mp.active", e.target.checked ? "1" : "0"); render(); });
+
+  async function load(zip) {
+    if (!/^\d{5}$/.test(zip)) { zipInput.focus(); return; }
+    store.set("mp.zip", zip);
+    history.replaceState(null, "", "?plz=" + zip);
+    $("#best").hidden = true; $("#controls").hidden = true;
+    $("#list").innerHTML = '<div class="skeleton"></div>'.repeat(4);
+    try {
+      const r = await fetch("/api/offers?zip=" + zip);
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Fehler " + r.status);
+      offers = data.offers;
+      excluded = new Set();
+      buildChips();
+      render();
+    } catch (err) {
+      $("#list").innerHTML = `<div class="state"><strong>Hat nicht geklappt</strong>${esc(err.message)}<br>Versuch es gleich nochmal.</div>`;
+    }
+  }
+
+  function buildChips() {
+    const names = [...new Set(offers.map((o) => o.retailer))].sort((a, b) => a.localeCompare(b, "de"));
+    $("#chips").innerHTML = names.map((n) => `<button type="button" class="chip" aria-pressed="true" data-r="${esc(n)}">${esc(n)}</button>`).join("");
+    $("#chips").querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => {
+      const n = b.dataset.r;
+      excluded.has(n) ? excluded.delete(n) : excluded.add(n);
+      b.setAttribute("aria-pressed", String(!excluded.has(n)));
+      render();
+    }));
+    $("#controls").hidden = names.length === 0;
+  }
+
+  const sorters = {
+    perCan: (a, b) => (a.perCan ?? 99) - (b.perCan ?? 99) || a.price - b.price,
+    price: (a, b) => a.price - b.price,
+    retailer: (a, b) => a.retailer.localeCompare(b.retailer, "de") || sorters.perCan(a, b),
+    validTo: (a, b) => new Date(a.validTo || 8e15) - new Date(b.validTo || 8e15),
+  };
+
+  function validity(o) {
+    if (!o.validTo) return "";
+    const to = new Date(o.validTo), from = new Date(o.validFrom);
+    if (!o.active && from > new Date()) return `<span class="badge soon">ab ${dfmt.format(from)}</span>`;
+    return `<span class="badge">bis ${dfmt.format(to)}</span>`;
+  }
+
+  function render() {
+    const list = offers
+      .filter((o) => !excluded.has(o.retailer))
+      .filter((o) => !state.onlyActive || o.active)
+      .sort(sorters[state.sort]);
+
+    const cheapest = offers.filter((o) => o.perCan != null && !excluded.has(o.retailer) && (!state.onlyActive || o.active))
+      .sort(sorters.perCan)[0];
+    const best = $("#best");
+    if (cheapest) {
+      best.hidden = false;
+      best.className = "best";
+      best.innerHTML = `
+        <div><div class="tag">Bester Preis pro Dose</div><div class="big">${eur.format(cheapest.perCan).replace(/\s?€/, "")}<small>€</small></div></div>
+        <div><div class="who">${esc(cheapest.retailer)}</div><div class="what">${esc(cheapest.title)} · ${eur.format(cheapest.price)}${cheapest.loyalty ? " · nur mit App/Karte" : ""}</div></div>
+        <img src="${cheapest.image}" alt="" loading="lazy" onerror="this.remove()">`;
+    } else best.hidden = true;
+
+    if (!offers.length) {
+      $("#list").innerHTML = `<div class="state"><strong>Gerade keine Angebote</strong>Diese Woche ist Monster in den Prospekten rund um ${esc(zipInput.value)} nicht im Angebot.</div>`;
+      return;
+    }
+    if (!list.length) {
+      $("#list").innerHTML = `<div class="state"><strong>Nichts mit diesen Filtern</strong>Nimm einen Filter raus.</div>`;
+      return;
+    }
+    $("#list").innerHTML = list.map((o) => {
+      const save = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
+      return `<article class="row ${o === cheapest ? "top" : ""}">
+        <img src="${o.image}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <div>
+          <div class="retailer">${esc(o.retailer)}</div>
+          <div class="desc">${esc(o.title)}</div>
+          <div class="badges">${validity(o)}${save ? `<span class="badge save">−${save} %</span>` : ""}${o.cans > 1 ? `<span class="badge">${o.cans}er</span>` : ""}${o.loyalty ? '<span class="badge club">App/Karte</span>' : ""}</div>
+        </div>
+        <div class="price"><div class="total">${eur.format(o.price)}</div>${o.oldPrice ? `<div class="old">${eur.format(o.oldPrice)}</div>` : ""}</div>
+        <div class="percan">${o.perCan != null ? `<div class="v">${eur.format(o.perCan)}</div><div class="l">/ Dose${o.perLitre ? " · " + eur.format(o.perLitre) + "/l" : ""}</div>` : '<div class="l">kein Literpreis</div>'}</div>
+      </article>`;
+    }).join("");
+  }
+
+  load(zipInput.value);
+})();
+</script>
+</body>
+</html>
