@@ -57,6 +57,16 @@ export function isMonster(o) {
   return true;
 }
 
+// "white": Ultra White ausdrücklich genannt; "assorted": "versch. Sorten" o. Ä., White wahrscheinlich dabei;
+// "other": nur andere Sorten genannt.
+export function detectVariant(o) {
+  const t = `${o?.product?.name ?? ""} ${o?.description ?? ""}`.toLowerCase();
+  if (/white|zero\s*ultra|ultra\s*zero/.test(t)) return "white";
+  if (/versch|sortiert|sorten|div\.|diverse|verschiedene|auswahl/.test(t)) return "assorted";
+  if (/ultra|mango|pipeline|punch|juiced|rehab|lewis|paradise|aussie|khaotic|java|nitro|reserve|lemonade|original|zero sugar|zero/.test(t)) return "other";
+  return "assorted";
+}
+
 export function normalize(o, now = new Date()) {
   const desc = [o.product?.name, o.description].filter(Boolean).join(" · ");
   const unit = (o.unit?.shortName || "").toLowerCase();
@@ -86,6 +96,7 @@ export function normalize(o, now = new Date()) {
     canLitres: canL,
     cans,
     loyalty: !!o.requiresLoyalityMembership,
+    variant: detectVariant(o),
     validFrom: span?.from ?? null,
     validTo: span?.to ?? null,
     active: !!current,
