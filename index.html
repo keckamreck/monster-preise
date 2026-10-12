@@ -580,6 +580,19 @@
   }
 
   const shopCache = new Map();
+  // Fallback: Nominatim direkt aus dem Browser, falls der Server-Abruf scheitert
+  async function shopsDirect([s, w, n, e], signal) {
+    const out = new Map();
+    for (const q of ["[supermarket]", "[convenience]", "[kiosk]", "[fuel]"]) {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=50&bounded=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent(q)}`, { signal });
+      if (!r.ok) throw new Error("Status " + r.status);
+      for (const x of await r.json()) {
+        const id = `${x.osm_type}/${x.osm_id}`;
+        out.set(id, { id, name: x.name || (x.type === "fuel" ? "Tankstelle" : "Laden"), brand: "", kind: x.type, lat: +x.lat, lon: +x.lon });
+      }
+    }
+    return [...out.values()];
+  }
   async function loadShops() {
     if (!map) return;
     if (map.getZoom() < 14) { note("Reinzoomen, um alle Läden zu sehen. Gemeldete Läden siehst du immer."); return; }
@@ -591,10 +604,15 @@
     try {
       let shops = shopCache.get(bbox);
       if (!shops) {
-        const r = await fetch("/api/shops?bbox=" + bbox, { signal: overpassCtl.signal });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || r.status);
-        shops = data.shops;
+        try {
+          const r = await fetch("/api/shops?bbox=" + bbox, { signal: overpassCtl.signal });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error || r.status);
+          shops = data.shops;
+        } catch (e) {
+          if (e.name === "AbortError") throw e;
+          shops = await shopsDirect(bbox.split(",").map(Number), overpassCtl.signal);
+        }
         shopCache.set(bbox, shops);
       }
       for (const sh of shops) { places.set(sh.id, sh); upsertMarker(sh.id); }
