@@ -53,7 +53,7 @@ export function isMonster(o) {
   const hay = `${o?.brand?.name ?? ""} ${o?.product?.name ?? ""} ${o?.description ?? ""}`.toLowerCase();
   if (!hay.includes("monster")) return false;
   // Monster Munch (Chips), Spielzeug, Tierfutter u. ä. raus
-  if (/munch|chips|snack|jam\b|truck|belloween|futter|spielzeug|plüsch|kostüm|high/.test(hay)) return false;
+  if (/munch|chips|snack|jam\b|truck|belloween|futter|spielzeug|plüsch|kostüm/.test(hay)) return false;
   // Nur Getränke: Literpreis oder eindeutige Getränke-Begriffe
   const unit = (o?.unit?.shortName || "").toLowerCase();
   return unit === "l" || /energy|dose|0[,.]5\s*-?\s*l|ultra|drink/.test(hay);
