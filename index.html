@@ -110,6 +110,34 @@
   .skeleton { height: 88px; border-top: 1px solid var(--line); background: linear-gradient(90deg, transparent, rgba(14,17,22,.035), transparent); background-size: 200% 100%; animation: sh 1.2s infinite; }
   @keyframes sh { to { background-position: -200% 0; } }
 
+  /* Vergleich */
+  h2.sec { font: 900 26px/1 var(--display); text-transform: uppercase; margin: 30px 0 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  h2.sec span { font: 400 13px var(--sans); text-transform: none; color: var(--muted); }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 2px 0; }
+  .crow { display: grid; grid-template-columns: minmax(110px, 1.1fr) 1.3fr 1.3fr auto; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .crow:first-child { border-top: 0; }
+  .crow.top { background: linear-gradient(90deg, var(--ice-soft), transparent 70%); }
+  .crow .who { font: 900 22px/1 var(--display); text-transform: uppercase; }
+  .crow .k { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .crow .v { font: 600 17px var(--mono); margin-top: 2px; }
+  .crow .v.na { font: 400 14px var(--sans); color: var(--muted); }
+  .crow .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .crow .best-v { text-align: right; min-width: 96px; }
+  .crow .best-v .n { font: 900 34px/1 var(--display); }
+  .crow .best-v .n.na { font: 400 14px var(--sans); color: var(--muted); }
+  .crow .best-v .src { font: 12px var(--mono); color: var(--muted); }
+  .linkbtn { font: 600 12.5px var(--sans); background: none; border: 0; padding: 0; color: var(--ice); text-decoration: underline; cursor: pointer; margin-top: 4px; }
+  .pform { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
+  .pform input { width: 7ch; font: 600 15px var(--mono); border: 1px solid var(--line-2); border-radius: 10px; padding: 6px 8px; background: #fff; color: var(--ink); }
+  .pform button { font: 700 13px var(--sans); border: 0; border-radius: 10px; padding: 7px 12px; background: var(--ink); color: #fff; cursor: pointer; }
+  .pform .msg { font-size: 12.5px; color: var(--muted); }
+  @media (max-width: 640px) {
+    .crow { grid-template-columns: 1fr auto; gap: 8px 12px; }
+    .crow .who { grid-column: 1; }
+    .crow .best-v { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
+    .crow .offer, .crow .normal { grid-column: 1; }
+  }
+
   /* Karte */
   .map-head { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: center; margin: 22px 0 12px; }
   .map-head p { margin: 0; color: var(--muted); max-width: 60ch; }
@@ -117,6 +145,7 @@
   .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 13px; color: var(--muted); }
   .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(14,17,22,.25); }
   .map-note { margin-top: 8px; font-size: 13px; color: var(--muted); min-height: 1.4em; }
+  .tiles-white { filter: grayscale(1) brightness(1.06) contrast(.92); }
   .leaflet-popup-content-wrapper { border-radius: 14px; }
   .leaflet-popup-content { margin: 14px 16px; font: 14px/1.4 var(--sans); min-width: 210px; }
   .pop h3 { margin: 0; font: 900 20px/1.05 var(--display); text-transform: uppercase; }
@@ -148,7 +177,7 @@
   <header class="top">
     <div class="brand">
       <h1>Monster-<br>Preise <span class="w">White</span></h1>
-      <p>Aktuelle Monster-Angebote aus den Prospekten in deiner Nähe. Günstigster Preis pro Dose zuerst, Pfand nicht eingerechnet.</p>
+      <p>Monster Ultra White im Vergleich: Prospekt-Angebote in deiner Nähe und Normalpreise, die Nutzer melden. Pro Dose, Pfand nicht eingerechnet.</p>
     </div>
     <form class="zip" id="zipForm">
       <label for="zip">Postleitzahl</label>
@@ -187,6 +216,11 @@
       <div class="chips" id="chips" role="group" aria-label="Händler filtern"></div>
     </div>
 
+    <h2 class="sec">Preisvergleich <span>Ultra White 0,5 l, pro Dose</span></h2>
+    <div class="list cmp" id="cmp" aria-live="polite"></div>
+    <p class="hint" id="cmpHint">„Normalpreis“ sind Regalpreise, die Nutzer für Ultra White melden (Mittelwert der letzten 30 Tage). Siehst du einen Preis im Laden, melde ihn mit „Preis melden“.</p>
+
+    <h2 class="sec">Prospekt-Angebote <span id="offerCount"></span></h2>
     <main class="list" id="list" aria-live="polite"></main>
   </section>
 
@@ -207,7 +241,7 @@
 
   <footer>
     Angebote: Prospektdaten über marktguru.de, ohne Gewähr. Preis pro Dose aus dem Literpreis berechnet (0,5 l, sofern nicht anders angegeben). „Versch. Sorten“ heißt: White ist wahrscheinlich dabei, aber nicht garantiert.
-    Läden: © OpenStreetMap-Mitwirkende. Kartenstil: © CARTO. Meldungen kommen von Nutzern.
+    Läden: © OpenStreetMap-Mitwirkende. Karte: © OpenStreetMap. Meldungen kommen von Nutzern.
     Private Fan-Seite, kein offizielles Angebot von Monster Energy.
   </footer>
 </div>
@@ -267,25 +301,45 @@
     render();
   }));
 
+  const CHAINS = new Set(["aldi-sued", "aldi-nord", "edeka", "kaufland", "lidl", "netto", "norma", "penny", "rewe", "globus"]);
+  let prices = {};          // chain -> {median, count, last, lastTs}
+  let pricesReady = null;   // null = lädt, true = ok, false = nicht eingerichtet
+  const openForms = new Set();
+
+  async function loadPrices() {
+    try {
+      const r = await fetch("/api/prices");
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || r.status);
+      prices = data.chains || {};
+      pricesReady = true;
+    } catch {
+      prices = {};
+      pricesReady = false;
+    }
+    render();
+  }
+
   async function load(zip) {
     if (!/^\d{5}$/.test(zip)) { zipInput.focus(); return; }
     store.set("mp.zip", zip);
     history.replaceState(null, "", "?plz=" + zip + location.hash);
     $("#best").hidden = true;
-    $("#list").innerHTML = '<div class="skeleton"></div>'.repeat(4);
+    $("#list").innerHTML = '<div class="skeleton"></div>'.repeat(2);
+    $("#cmp").innerHTML = '<div class="skeleton"></div>'.repeat(4);
     try {
       const r = await fetch("/api/offers?zip=" + zip);
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Fehler " + r.status);
       offers = data.offers.map((o) => ({ ...o, rk: retailerKey(o.retailer) }));
-      excluded = new Set();
-      render();
+      offersError = null;
     } catch (err) {
       offers = [];
-      buildChips([]);
-      $("#list").innerHTML = `<div class="state"><strong>Hat nicht geklappt</strong>${esc(err.message)}<br>Versuch es gleich nochmal.</div>`;
+      offersError = err.message;
     }
+    render();
   }
+  let offersError = null;
 
   const variantOk = (o) => state.variant === "all" || o.variant === "white" || o.variant === "assorted";
   const activeOk = (o) => !state.onlyActive || o.active;
@@ -322,25 +376,109 @@
   }
   const variantBadge = (o) => o.variant === "white" ? '<span class="badge white">Ultra White</span>'
     : o.variant === "assorted" ? '<span class="badge">versch. Sorten</span>' : "";
+  function ago(ts) {
+    const m = Math.round((Date.now() - ts) / 60000);
+    if (m < 60) return `vor ${Math.max(1, m)} Min.`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `vor ${h} Std.`;
+    const d = Math.round(h / 24);
+    return `vor ${d} ${d === 1 ? "Tag" : "Tagen"}`;
+  }
+
+  /* Vergleichstabelle: eine Zeile pro Händler */
+  function compareRows(base) {
+    const keys = new Set([...ALWAYS, "norma", ...base.map((o) => o.rk), ...Object.keys(prices)]);
+    return [...keys].filter((k) => !excluded.has(k)).map((k) => {
+      const own = base.filter((o) => o.rk === k && o.perCan != null).sort(sorters.perCan);
+      const offerNow = own.find((o) => o.active);
+      const offer = offerNow || own[0] || null;
+      const fromOffer = own.find((o) => o.oldPrice && o.cans === 1);
+      const normal = prices[k] || (fromOffer ? { median: fromOffer.oldPrice, count: 0, prospekt: true } : null);
+      const cands = [];
+      if (offerNow) cands.push({ v: offerNow.perCan, src: "Angebot" });
+      if (normal) cands.push({ v: normal.median, src: "Normalpreis" });
+      cands.sort((a, b) => a.v - b.v);
+      const any = offers.find((o) => o.rk === k);
+      return { k, label: retailerLabel(k, any ? any.retailer : k), offer, normal, best: cands[0] || null };
+    }).sort((a, b) => (a.best?.v ?? 99) - (b.best?.v ?? 99) || a.label.localeCompare(b.label, "de"));
+  }
+
+  function renderCompare(rows) {
+    const top = rows.find((r) => r.best);
+    $("#cmp").innerHTML = rows.map((r) => {
+      const o = r.offer;
+      const offerHtml = o
+        ? `<div class="v">${eur.format(o.perCan)}</div><div class="s">${o.active ? "" : "ab " + dfmt.format(new Date(o.validFrom)) + " · "}${o.validTo ? "bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""}${o.variant === "assorted" ? " · versch. Sorten" : ""}</div>`
+        : `<div class="v na">kein Angebot</div>`;
+      const n = r.normal;
+      const normalHtml = n
+        ? `<div class="v">${eur.format(n.median)}</div><div class="s">${n.prospekt ? "laut Prospekt" : `${n.count} ${n.count === 1 ? "Meldung" : "Meldungen"} · zuletzt ${ago(n.lastTs)}`}</div>`
+        : `<div class="v na">${pricesReady === false ? "Meldungen nicht verfügbar" : "noch nicht gemeldet"}</div>`;
+      const canReport = CHAINS.has(r.k) && pricesReady !== false;
+      const form = openForms.has(r.k)
+        ? `<form class="pform" data-k="${esc(r.k)}"><input name="p" inputmode="decimal" placeholder="1,59" aria-label="Preis pro Dose in Euro" required><span>€</span><button type="submit">Senden</button><span class="msg"></span></form>`
+        : canReport ? `<button type="button" class="linkbtn" data-open="${esc(r.k)}">Preis melden</button>` : "";
+      return `<div class="crow ${r === top ? "top" : ""}">
+        <div class="who">${esc(r.label)}</div>
+        <div class="offer"><div class="k">Angebot</div>${offerHtml}</div>
+        <div class="normal"><div class="k">Normalpreis</div>${normalHtml}${form}</div>
+        <div class="best-v">${r.best ? `<div class="n">${eur.format(r.best.v)}</div><div class="src">${r.best.src}</div>` : '<div class="n na">kein Preis</div>'}</div>
+      </div>`;
+    }).join("");
+    $("#cmp").querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => {
+      openForms.add(b.dataset.open); render();
+      $(`#cmp form[data-k="${b.dataset.open}"] input`)?.focus();
+    }));
+    $("#cmp").querySelectorAll("form.pform").forEach((f) => f.addEventListener("submit", (e) => { e.preventDefault(); sendPrice(f); }));
+    return top;
+  }
+
+  async function sendPrice(form) {
+    const k = form.dataset.k, msg = form.querySelector(".msg"), btn = form.querySelector("button");
+    btn.disabled = true; msg.textContent = "";
+    try {
+      const r = await fetch("/api/prices", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chain: k, price: form.p.value, zip: zipInput.value.trim() }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || r.status);
+      prices[k] = data.summary;
+      openForms.delete(k);
+      render();
+    } catch (err) {
+      btn.disabled = false;
+      msg.textContent = err.message;
+    }
+  }
 
   function render() {
     const base = offers.filter(variantOk).filter(activeOk);
     buildChips(base);
-    const list = base.filter((o) => !excluded.has(o.rk)).sort(sorters[state.sort]);
-    const cheapest = list.filter((o) => o.perCan != null).sort(sorters.perCan)[0];
-    const label = state.variant !== "white" ? "Bester Preis pro Dose"
-      : cheapest?.variant === "white" ? "Bester Preis für Ultra White" : "Bester Preis · versch. Sorten inkl. White";
+    const rows = compareRows(base);
+    const top = renderCompare(rows);
 
     const best = $("#best");
-    if (cheapest) {
+    if (top) {
+      const o = top.best.src === "Angebot" ? top.offer : null;
+      const tag = state.variant !== "white" ? "Günstigster Preis pro Dose" : "Günstigster Preis für Ultra White";
+      const what = o
+        ? `${esc(o.title)} · ${eur.format(o.price)}${o.validTo ? " · bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""}`
+        : top.normal.prospekt ? "Normalpreis laut Prospekt" : `Normalpreis aus ${top.normal.count} ${top.normal.count === 1 ? "Nutzer-Meldung" : "Nutzer-Meldungen"}`;
       best.hidden = false;
       best.className = "best";
       best.innerHTML = `
-        <div><div class="tag">${label}</div><div class="big">${eur.format(cheapest.perCan).replace(/\s?€/, "")}<small>€</small></div></div>
-        <div><div class="who">${esc(cheapest.retailer)}</div><div class="what">${esc(cheapest.title)} · ${eur.format(cheapest.price)}${cheapest.loyalty ? " · nur mit App/Karte" : ""}</div></div>
-        <img src="${esc(cheapest.image)}" alt="" loading="lazy" onerror="this.remove()">`;
+        <div><div class="tag">${tag}</div><div class="big">${eur.format(top.best.v).replace(/\s?€/, "")}<small>€</small></div></div>
+        <div><div class="who">${esc(top.label)}</div><div class="what">${what}</div></div>
+        ${o ? `<img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}`;
     } else best.hidden = true;
 
+    const list = base.filter((o) => !excluded.has(o.rk)).sort(sorters[state.sort]);
+    $("#offerCount").textContent = offers.length ? `${list.length} von ${offers.length} diese Woche` : "";
+    if (offersError) {
+      $("#list").innerHTML = `<div class="state"><strong>Angebote nicht geladen</strong>${esc(offersError)}<br>Versuch es gleich nochmal.</div>`;
+      return;
+    }
     if (!offers.length) {
       $("#list").innerHTML = `<div class="state"><strong>Gerade keine Angebote</strong>Diese Woche ist Monster in den Prospekten rund um ${esc(zipInput.value)} nicht im Angebot.</div>`;
       return;
@@ -352,7 +490,7 @@
     }
     $("#list").innerHTML = list.map((o) => {
       const save = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
-      return `<article class="row ${o === cheapest ? "top" : ""}">
+      return `<article class="row">
         <img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         <div>
           <div class="retailer">${esc(o.retailer)}</div>
@@ -388,15 +526,6 @@
   const note = (t) => { $("#mapNote").textContent = t || ""; };
 
   const COLORS = { out: "#c53030", ok: "#1e7a46", none: "#8a96a3" };
-  function ago(ts) {
-    const m = Math.round((Date.now() - ts) / 60000);
-    if (m < 60) return `vor ${Math.max(1, m)} Min.`;
-    const h = Math.round(m / 60);
-    if (h < 24) return `vor ${h} Std.`;
-    const d = Math.round(h / 24);
-    return `vor ${d} ${d === 1 ? "Tag" : "Tagen"}`;
-  }
-
   function popupHtml(id) {
     const p = places.get(id) || reports.get(id);
     const r = reports.get(id);
@@ -446,36 +575,30 @@
       reports.forEach((_, id) => upsertMarker(id));
     } catch (e) {
       reportsReady = false;
-      note("Meldungen konnten nicht geladen werden: " + e.message);
+      note(String(e.message).includes("nicht eingerichtet") ? "Melden ist noch nicht freigeschaltet (Speicher fehlt). Die Läden siehst du trotzdem." : "Meldungen konnten nicht geladen werden: " + e.message);
     }
   }
 
+  const shopCache = new Map();
   async function loadShops() {
     if (!map) return;
     if (map.getZoom() < 14) { note("Reinzoomen, um alle Läden zu sehen. Gemeldete Läden siehst du immer."); return; }
     const b = map.getBounds();
-    const bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((x) => x.toFixed(5)).join(",");
-    const q = `[out:json][timeout:20];(nwr["shop"~"^(supermarket|convenience|kiosk)$"](${bbox});nwr["amenity"="fuel"](${bbox}););out center 400;`;
+    const bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((x) => x.toFixed(2)).join(",");
     overpassCtl?.abort();
     overpassCtl = new AbortController();
     note("Läden werden geladen …");
     try {
-      const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(q), signal: overpassCtl.signal, headers: { "content-type": "application/x-www-form-urlencoded" } });
-      if (!r.ok) throw new Error("Status " + r.status);
-      const data = await r.json();
-      let n = 0;
-      for (const el of data.elements || []) {
-        const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon;
-        if (lat == null) continue;
-        const t = el.tags || {};
-        const brand = t.brand || t.operator || "";
-        const name = t.name || brand || (t.amenity === "fuel" ? "Tankstelle" : "Laden");
-        const id = `${el.type}/${el.id}`;
-        places.set(id, { id, name, brand, lat, lon });
-        upsertMarker(id);
-        n++;
+      let shops = shopCache.get(bbox);
+      if (!shops) {
+        const r = await fetch("/api/shops?bbox=" + bbox, { signal: overpassCtl.signal });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || r.status);
+        shops = data.shops;
+        shopCache.set(bbox, shops);
       }
-      note(n ? `${n} Läden in diesem Ausschnitt.` : "Hier sind keine Läden eingetragen.");
+      for (const sh of shops) { places.set(sh.id, sh); upsertMarker(sh.id); }
+      note(shops.length ? `${shops.length} Läden in diesem Ausschnitt.` : "Hier sind keine Läden eingetragen.");
     } catch (e) {
       if (e.name !== "AbortError") note("Läden konnten nicht geladen werden. Verschieb die Karte etwas, um es nochmal zu versuchen.");
     }
@@ -514,9 +637,9 @@
     if (map) { setTimeout(() => map.invalidateSize(), 0); return; }
     if (!window.L) { note("Karte konnte nicht geladen werden."); return; }
     map = L.map("map", { zoomControl: true }).setView([49.0069, 8.4037], 13);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19, subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19, className: "tiles-white",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
     }).addTo(map);
     layer = L.layerGroup().addTo(map);
     let t;
@@ -542,6 +665,7 @@
   });
 
   load(zipInput.value);
+  loadPrices();
   if (location.hash === "#karte") showTab("karte");
 })();
 </script>

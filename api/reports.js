@@ -1,31 +1,12 @@
 // Nutzer-Meldungen zur Verfügbarkeit von Monster Ultra White je Laden.
 // Speicher: Upstash Redis (Vercel Marketplace), angesprochen über die REST-API.
+import { redisConfig, redis, overLimit, NOT_CONFIGURED, parseBody } from "../lib/redis.js";
 
 const STATUSES = new Set(["out", "ok"]); // out = kein White da, ok = White da
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // Meldungen älter als 7 Tage zählen nicht mehr
 const KEEP_PER_STORE = 10;
 const RATE_LIMIT = 30; // Meldungen pro IP und Stunde
 const HASH = "mp:stores";
-
-function redisConfig(env = process.env) {
-  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url: url.replace(/\/$/, ""), token } : null;
-}
-
-export async function redis(cfg, commands, fetchImpl = fetch) {
-  const res = await fetchImpl(`${cfg.url}/pipeline`, {
-    method: "POST",
-    headers: { authorization: `Bearer ${cfg.token}`, "content-type": "application/json" },
-    body: JSON.stringify(commands),
-  });
-  if (!res.ok) throw new Error(`Speicher antwortet mit ${res.status}`);
-  const out = await res.json();
-  return out.map((r) => {
-    if (r.error) throw new Error(r.error);
-    return r.result;
-  });
-}
 
 const clean = (s, max) => String(s ?? "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, max);
 
@@ -58,15 +39,10 @@ export function summarize(store, now = Date.now()) {
   };
 }
 
-function ipOf(req) {
-  const xf = String(req.headers?.["x-forwarded-for"] || "").split(",")[0].trim();
-  return xf || req.socket?.remoteAddress || "unknown";
-}
-
 export async function handle(req, res, { env = process.env, fetchImpl = fetch, now = Date.now() } = {}) {
   const cfg = redisConfig(env);
   if (!cfg) {
-    res.status(503).json({ error: "Meldungen sind noch nicht eingerichtet (Redis-Speicher fehlt)." });
+    res.status(503).json({ error: NOT_CONFIGURED });
     return;
   }
   try {
@@ -85,15 +61,13 @@ export async function handle(req, res, { env = process.env, fetchImpl = fetch, n
     }
 
     if (req.method === "POST") {
-      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body;
+      const body = parseBody(req);
       const err = validate(body);
       if (err) {
         res.status(400).json({ error: err });
         return;
       }
-      const rlKey = `mp:rl:${ipOf(req)}`;
-      const [count] = await redis(cfg, [["INCR", rlKey], ["EXPIRE", rlKey, 3600, "NX"]], fetchImpl);
-      if (count > RATE_LIMIT) {
+      if (await overLimit(cfg, req, RATE_LIMIT, fetchImpl)) {
         res.status(429).json({ error: "Zu viele Meldungen. Versuch es später nochmal." });
         return;
       }

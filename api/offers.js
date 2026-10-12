@@ -67,8 +67,23 @@ export function detectVariant(o) {
   return "assorted";
 }
 
+export function parseNormalPrice(text = "") {
+  const m = String(text).match(/normalpreis:?\s*(\d+[.,]\d{2})/i);
+  return m ? Number(m[1].replace(",", ".")) : null;
+}
+
+// Werbe-Hinweise aus der Beschreibung entfernen, damit die Zeile lesbar bleibt
+export function cleanDesc(text = "") {
+  return String(text)
+    .replace(/hinweis:\s*/gi, "")
+    .replace(/normalpreis:?\s*\d+[.,]\d{2}\s*€?/gi, "")
+    .replace(/taurin-?\s*und\s*koffeinhaltig\.?/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export function normalize(o, now = new Date()) {
-  const desc = [o.product?.name, o.description].filter(Boolean).join(" · ");
+  const desc = [o.product?.name, cleanDesc(o.description)].filter(Boolean).join(" · ");
   const unit = (o.unit?.shortName || "").toLowerCase();
   const perLitre = unit === "l" && o.referencePrice ? o.referencePrice : null;
   const canL = parseCanLitres(o.description || "") ?? 0.5;
@@ -90,12 +105,12 @@ export function normalize(o, now = new Date()) {
     description: o.description ?? "",
     title: desc,
     price: o.price,
-    oldPrice: o.oldPrice ?? null,
+    oldPrice: o.oldPrice ?? parseNormalPrice(o.description),
     perLitre: perLitre ? round2(perLitre) : null,
     perCan,
     canLitres: canL,
     cans,
-    loyalty: !!o.requiresLoyalityMembership,
+    loyalty: !!o.requiresLoyalityMembership || /plus[\s-]*app|mit (der )?app|payback|kundenkarte|lidl plus|k-card|kaufland card/i.test(o.description || ""),
     variant: detectVariant(o),
     validFrom: span?.from ?? null,
     validTo: span?.to ?? null,
@@ -104,11 +119,11 @@ export function normalize(o, now = new Date()) {
   };
 }
 
-async function searchOnce(zip, keys, fetchImpl) {
+async function searchOnce(zip, keys, fetchImpl, q = "monster energy") {
   const url = new URL(MG_API);
   url.search = new URLSearchParams({
     as: "web",
-    q: "monster energy",
+    q,
     zipCode: String(zip),
     limit: "200",
     offset: "0",
@@ -123,18 +138,28 @@ async function searchOnce(zip, keys, fetchImpl) {
   });
 }
 
+const QUERIES = ["monster energy", "monster", "monster ultra white"];
+
+async function searchAll(zip, keys, fetchImpl) {
+  const responses = await Promise.all(QUERIES.map((q) => searchOnce(zip, keys, fetchImpl, q)));
+  if (responses.some((r) => r.status === 401 || r.status === 403)) return null;
+  const ok = responses.filter((r) => r.ok);
+  if (!ok.length) throw new Error(`Marktguru-API antwortet mit ${responses[0].status}`);
+  const lists = await Promise.all(ok.map((r) => r.json().then((d) => d.results || []).catch(() => [])));
+  return lists.flat();
+}
+
 export async function fetchOffers(zip, fetchImpl = fetch) {
   let keys = await getKeys(fetchImpl);
-  let res = await searchOnce(zip, keys, fetchImpl);
-  if (res.status === 401 || res.status === 403) {
+  let results = await searchAll(zip, keys, fetchImpl);
+  if (results === null) {
     keys = await getKeys(fetchImpl, true);
-    res = await searchOnce(zip, keys, fetchImpl);
+    results = await searchAll(zip, keys, fetchImpl);
+    if (results === null) throw new Error("Marktguru-API verweigert den Zugriff");
   }
-  if (!res.ok) throw new Error(`Marktguru-API antwortet mit ${res.status}`);
-  const data = await res.json();
   const now = new Date();
   const seen = new Set();
-  return (data.results || [])
+  return results
     .filter(isMonster)
     .map((o) => normalize(o, now))
     .filter((o) => {
