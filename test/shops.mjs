@@ -17,6 +17,14 @@ const nm = compactNominatim([
   { osm_type: "node", osm_id: 10, lat: "49", lon: "8.41", name: "Kiosk am Eck", type: "kiosk" },
 ]);
 assert.deepEqual(nm.map((x) => [x.id, x.chain, x.brand]), [["node/7", "lidl", "Lidl"], ["node/9", "netto", ""]]);
+
+// Adresse und Öffnungszeiten für die Laden-Kachel
+const [withAddr] = compact([{ type: "node", id: 5, lat: 49, lon: 8.4, tags: { shop: "supermarket", name: "EDEKA Südstadt", "addr:street": "Ettlinger Straße", "addr:housenumber": "12", "addr:postcode": "76137", "addr:city": "Karlsruhe", opening_hours: "Mo-Sa 07:00-22:00" } }]);
+assert.equal(withAddr.addr, "Ettlinger Straße 12, 76137 Karlsruhe"); assert.equal(withAddr.hours, "Mo-Sa 07:00-22:00");
+const [nAddr] = compactNominatim([{ osm_type: "node", osm_id: 11, lat: "49", lon: "8.4", name: "REWE", type: "supermarket", address: { road: "Kaiserstraße", house_number: "5", postcode: "76133", city: "Karlsruhe" }, extratags: { opening_hours: "Mo-Sa 07:00-23:00" } }]);
+assert.equal(nAddr.addr, "Kaiserstraße 5, 76133 Karlsruhe"); assert.equal(nAddr.hours, "Mo-Sa 07:00-23:00");
+const [noAddr] = compactNominatim([{ osm_type: "node", osm_id: 12, lat: "49", lon: "8.4", name: "Penny", address: { town: "Ettlingen" } }]);
+assert.equal(noAddr.addr, "Ettlingen"); assert.equal(noAddr.hours, "");
 console.log("shops ok");
 
 // Fallback: Nominatim fällt aus, dann Overpass

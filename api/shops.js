@@ -21,6 +21,9 @@ export function parseBbox(raw) {
 }
 
 const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
+// „Straße Nr, PLZ Ort“, Teile, die fehlen, fallen weg
+const joinAddr = (street, no, zip, city) =>
+  [[street, no].filter(Boolean).join(" "), [zip, city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
 
 // Overpass-Elemente -> Läden, nur Supermärkte der bekannten Ketten
 export function compact(elements) {
@@ -32,7 +35,8 @@ export function compact(elements) {
     const brand = t.brand || t.operator || "";
     const chain = chainOf({ name: t.name, brand, wikidata: t["brand:wikidata"], lat, lon });
     if (!chain) continue;
-    out.push({ id: `${el.type}/${el.id}`, name: t.name || brand, brand, chain, lat: round5(lat), lon: round5(lon) });
+    const addr = joinAddr(t["addr:street"], t["addr:housenumber"], t["addr:postcode"], t["addr:city"]);
+    out.push({ id: `${el.type}/${el.id}`, name: t.name || brand, brand, chain, lat: round5(lat), lon: round5(lon), addr, hours: t.opening_hours || "" });
   }
   return out;
 }
@@ -47,13 +51,15 @@ export function compactNominatim(list) {
     const brand = x.extratags?.brand || "";
     const chain = chainOf({ name: x.name, brand, wikidata: x.extratags?.["brand:wikidata"], lat: x.lat, lon: x.lon });
     if (!chain) continue;
-    out.push({ id: `${x.osm_type}/${x.osm_id}`, name: x.name || brand, brand, chain, lat: round5(x.lat), lon: round5(x.lon) });
+    const a = x.address || {};
+    const addr = joinAddr(a.road || a.pedestrian, a.house_number, a.postcode, a.city || a.town || a.village || a.municipality);
+    out.push({ id: `${x.osm_type}/${x.osm_id}`, name: x.name || brand, brand, chain, lat: round5(x.lat), lon: round5(x.lon), addr, hours: x.extratags?.opening_hours || "" });
   }
   return out;
 }
 
 async function nominatim([s, w, n, e], fetchImpl) {
-  const url = `${NOMINATIM}?format=jsonv2&limit=40&bounded=1&extratags=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent("[supermarket]")}`;
+  const url = `${NOMINATIM}?format=jsonv2&limit=40&bounded=1&extratags=1&addressdetails=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent("[supermarket]")}`;
   const res = await fetchImpl(url, { headers: { "user-agent": UA, "accept-language": "de" }, signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`nominatim: ${res.status}`);
   const seen = new Set();
