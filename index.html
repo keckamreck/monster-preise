@@ -196,7 +196,8 @@
     <div class="controls">
       <div class="ctrl-row">
         <div class="filters">
-          <label class="fsel">Sorte <select id="flavor" class="flavor-select"></select></label>
+          <!-- Sortenauswahl in Produktion ausgeblendet, siehe FLAVOR_SELECT_ENABLED -->
+          <label class="fsel" id="flavorWrap" hidden>Sorte <select id="flavor" class="flavor-select"></select></label>
           <div class="seg" role="group" aria-label="Zeitraum" id="weekSeg">
             <button type="button" data-w="this" aria-pressed="true">Diese Woche</button>
             <button type="button" data-w="next" aria-pressed="false">Nächste Woche</button>
@@ -247,9 +248,13 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   };
-  // Karte ist noch in Entwicklung: in Produktion aus, lokal (localhost) oder mit ?dev=karte an
-  const MAP_ENABLED = ["localhost", "127.0.0.1"].includes(location.hostname)
-    || new URLSearchParams(location.search).get("dev") === "karte";
+  // Features in Entwicklung: in Produktion aus. Lokal (localhost) alle an, online einzeln per
+  // ?dev=karte, ?dev=sorte oder kombiniert ?dev=karte,sorte
+  const IS_LOCAL = ["localhost", "127.0.0.1"].includes(location.hostname);
+  const DEV = new Set((new URLSearchParams(location.search).get("dev") || "").split(",").map((x) => x.trim()));
+  const devOn = (name) => IS_LOCAL || DEV.has(name);
+  const MAP_ENABLED = devOn("karte");
+  const FLAVOR_SELECT_ENABLED = devOn("sorte"); // ohne Auswahl immer Ultra White
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   /* ---------- Händler ---------- */
@@ -265,7 +270,7 @@
     ["rewe", "REWE", /rewe/],
     ["globus", "Globus", /globus/],
   ];
-  const ALWAYS = new Set(["edeka", "kaufland", "lidl", "rewe", "aldi-sued", "netto", "penny"]);
+  const ALWAYS = new Set(["edeka", "kaufland", "lidl", "rewe", "aldi-sued", "netto", "penny", "norma"]);
   function retailerKey(name) {
     const n = String(name || "").toLowerCase();
     const hit = RETAILERS.find(([, , re]) => re.test(n));
@@ -409,7 +414,7 @@
 
   /* Vergleichstabelle: eine Zeile pro Händler */
   function compareRows(base) {
-    const keys = new Set([...ALWAYS, "norma", ...base.map((o) => o.rk)]);
+    const keys = new Set([...ALWAYS, ...base.map((o) => o.rk)]);
     return [...keys].filter((k) => !excluded.has(k)).map((k) => {
       const own = base.filter((o) => o.rk === k && o.perCan != null).sort(byPerCan);
       const offerNow = state.week === "this" ? own.find((o) => o.active) : own[0];
@@ -477,7 +482,7 @@
       return;
     }
     if (!list.length) {
-      const hint = state.week !== "all" ? "Für diesen Zeitraum gibt es kein passendes Angebot. Probier „Alle“ beim Zeitraum." : state.flavor !== "all" ? `Gerade kein Angebot mit ${esc(flavorLabel(state.flavor))}. Schau unter „Alle Sorten“.` : "Nimm einen Filter raus.";
+      const hint = state.week !== "all" ? "Für diesen Zeitraum gibt es kein passendes Angebot. Probier „Alle“ beim Zeitraum." : state.flavor !== "all" ? `Gerade kein Angebot mit ${esc(flavorLabel(state.flavor))}.${FLAVOR_SELECT_ENABLED ? " Schau unter „Alle Sorten“." : ""}` : "Nimm einen Filter raus.";
       $("#list").innerHTML = `<div class="state"><strong>Nichts gefunden</strong>${hint}</div>`;
       return;
     }
@@ -724,6 +729,7 @@
   });
 
   load(zipInput.value);
+  if (FLAVOR_SELECT_ENABLED) $("#flavorWrap").hidden = false;
   if (MAP_ENABLED) {
     $(".tabs").hidden = false;
     $("#footMap").hidden = false;

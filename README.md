@@ -4,7 +4,7 @@ WebApp im hellen White-Look, die die aktuellen Monster-Energy-Angebote aus den S
 
 Dazu gibt es eine **Karte**, auf der Nutzer pro Laden melden können, ob es dort gerade Ultra White gibt. Meldungen gelten 7 Tage.
 
-Die Karte ist noch in Entwicklung und in Produktion ausgeblendet. Lokal (`localhost`) ist sie automatisch sichtbar, sonst mit `?dev=karte` an der URL. Freischalten: `MAP_ENABLED` in `index.html` auf `true` setzen.
+Die Karte und die Sortenauswahl sind noch in Entwicklung und in Produktion ausgeblendet (ohne Auswahl gilt immer Ultra White). Lokal (`localhost`) sind beide automatisch sichtbar, online mit `?dev=karte`, `?dev=sorte` oder `?dev=karte,sorte` an der URL. Freischalten: `MAP_ENABLED` bzw. `FLAVOR_SELECT_ENABLED` in `index.html` auf `true` setzen.
 
 Angebote von Scheck-in Center werden komplett herausgefiltert (`BLOCKED_RETAILERS` in `api/offers.js`).
 
