@@ -125,11 +125,9 @@
   .crow .best-v .n { font: 900 34px/1 var(--display); }
   .crow .best-v .n.na { font: 400 14px var(--sans); color: var(--muted); }
   .crow .best-v .src { font: 12px var(--mono); color: var(--muted); }
-  .linkbtn { font: 600 12.5px var(--sans); background: none; border: 0; padding: 0; color: var(--ice); text-decoration: underline; cursor: pointer; margin-top: 4px; }
-  .pform { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
-  .pform input { width: 7ch; font: 600 15px var(--mono); border: 1px solid var(--line-2); border-radius: 10px; padding: 6px 8px; background: #fff; color: var(--ink); }
-  .pform button { font: 700 13px var(--sans); border: 0; border-radius: 10px; padding: 7px 12px; background: var(--ink); color: #fff; cursor: pointer; }
-  .pform .msg { font-size: 12.5px; color: var(--muted); }
+  .wk { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: var(--ink); color: #fff; font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+  .wk .n { margin-left: auto; opacity: .7; }
+  .wk + .row { border-top: 0; }
   @media (max-width: 640px) {
     .crow { grid-template-columns: 1fr auto; gap: 8px 12px; }
     .crow .who { grid-column: 1; }
@@ -211,7 +209,7 @@
 
     <h2 class="sec">Preisvergleich <span id="cmpSub">Ultra White 0,5 l, pro Dose</span></h2>
     <div class="list cmp" id="cmp" aria-live="polite"></div>
-    <p class="hint" id="cmpHint">„Normalpreis“ ist der Regalpreis einer 0,5-l-Dose: zuerst aus Nutzer-Meldungen der letzten 30 Tage (Median), sonst laut Prospekt, sonst ein Richtwert von supermarktcheck.de (zuletzt gemeldet, ohne Datum). Edeka-Preise sind je Markt verschieden. Siehst du einen Preis im Laden, melde ihn mit „Preis melden“.</p>
+    <p class="hint" id="cmpHint">„Normalpreis“ ist die UVP von 1,59 € pro 0,5-l-Dose (ohne Pfand), die überall gilt. Alles darunter ist ein Angebot.</p>
 
     <h2 class="sec">Prospekt-Angebote <span id="offerCount"></span></h2>
     <main class="list" id="list" aria-live="polite"></main>
@@ -297,8 +295,8 @@
   ];
   const flavorLabel = (k) => (FLAVORS.find((f) => f[0] === k) || [k, k])[1];
   const flavorShort = (k) => (FLAVORS.find((f) => f[0] === k) || [k, k, k])[2];
-  // Richtwerte (zuletzt gemeldet auf supermarktcheck.de, ohne Datum; abgerufen 12.10.2026)
-  const REFERENCE = { rewe: 1.64, "aldi-sued": 1.49, kaufland: 1.49, netto: 1.11, lidl: 1.49 };
+  // UVP pro 0,5-l-Dose ohne Pfand: gilt überall als Normalpreis, mehr kostet eine Dose nicht
+  const UVP = 1.59;
 
   // Sorte startet immer mit Ultra White
   const state = { flavor: "ultra-white", week: "this" };
@@ -329,25 +327,6 @@
 
   $("#zipForm").addEventListener("submit", (e) => { e.preventDefault(); load(zipInput.value.trim()); if (map) centerOnZip(zipInput.value.trim()); });
 
-
-  const CHAINS = new Set(["aldi-sued", "aldi-nord", "edeka", "kaufland", "lidl", "netto", "norma", "penny", "rewe", "globus"]);
-  let prices = {};          // chain -> {median, count, last, lastTs}
-  let pricesReady = null;   // null = lädt, true = ok, false = nicht eingerichtet
-  const openForms = new Set();
-
-  async function loadPrices() {
-    try {
-      const r = await fetch("/api/prices");
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || r.status);
-      prices = data.chains || {};
-      pricesReady = true;
-    } catch {
-      prices = {};
-      pricesReady = false;
-    }
-    render();
-  }
 
   async function load(zip) {
     if (!/^\d{5}$/.test(zip)) { zipInput.focus(); return; }
@@ -430,70 +409,35 @@
 
   /* Vergleichstabelle: eine Zeile pro Händler */
   function compareRows(base) {
-    const keys = new Set([...ALWAYS, "norma", ...base.map((o) => o.rk), ...Object.keys(prices)]);
+    const keys = new Set([...ALWAYS, "norma", ...base.map((o) => o.rk)]);
     return [...keys].filter((k) => !excluded.has(k)).map((k) => {
       const own = base.filter((o) => o.rk === k && o.perCan != null).sort(byPerCan);
       const offerNow = state.week === "this" ? own.find((o) => o.active) : own[0];
       const offer = offerNow || own[0] || null;
-      const fromOffer = own.find((o) => o.oldPrice && o.cans === 1);
-      const normal = prices[k] || (fromOffer ? { median: fromOffer.oldPrice, count: 0, prospekt: true } : null)
-        || (REFERENCE[k] ? { median: REFERENCE[k], count: 0, reference: true } : null);
-      const cands = [];
-      if (offerNow) cands.push({ v: offerNow.perCan, src: "Angebot" });
-      if (normal) cands.push({ v: normal.median, src: normal.reference ? "Richtwert" : "Normalpreis" });
-      cands.sort((a, b) => a.v - b.v);
+      const normal = { median: UVP, uvp: true };
+      const cands = [{ v: UVP, src: "UVP" }];
+      if (offerNow) cands.unshift({ v: offerNow.perCan, src: "Angebot" });
       const any = offers.find((o) => o.rk === k);
       return { k, label: retailerLabel(k, any ? any.retailer : k), offer, normal, best: cands[0] || null };
     }).sort((a, b) => (a.best?.v ?? 99) - (b.best?.v ?? 99) || a.label.localeCompare(b.label, "de"));
   }
 
   function renderCompare(rows) {
-    const top = rows.find((r) => r.best);
+    const top = rows.find((r) => r.best.src === "Angebot");
     $("#cmp").innerHTML = rows.map((r) => {
       const o = r.offer;
       const offerHtml = o
         ? `<div class="v">${eur.format(o.perCan)}</div><div class="s">${o.active ? "" : "ab " + dfmt.format(new Date(o.validFrom)) + " · "}${o.validTo ? "bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""}${o.variant === "assorted" ? " · versch. Sorten" : ""}</div>`
         : `<div class="v na">kein Angebot</div>`;
-      const n = r.normal;
-      const normalHtml = n
-        ? `<div class="v">${eur.format(n.median)}</div><div class="s">${n.prospekt ? "laut Prospekt" : n.reference ? "Richtwert, supermarktcheck.de" : `${n.count} ${n.count === 1 ? "Meldung" : "Meldungen"} · zuletzt ${ago(n.lastTs)}`}</div>`
-        : `<div class="v na">${pricesReady === false ? "Meldungen nicht verfügbar" : "noch nicht gemeldet"}</div>`;
-      const canReport = CHAINS.has(r.k) && pricesReady !== false;
-      const form = openForms.has(r.k)
-        ? `<form class="pform" data-k="${esc(r.k)}"><input name="p" inputmode="decimal" placeholder="1,59" aria-label="Preis pro Dose in Euro" required><span>€</span><button type="submit">Senden</button><span class="msg"></span></form>`
-        : canReport ? `<button type="button" class="linkbtn" data-open="${esc(r.k)}">Preis melden</button>` : "";
+      const normalHtml = `<div class="v">${eur.format(UVP)}</div><div class="s">UVP</div>`;
       return `<div class="crow ${r === top ? "top" : ""}">
         <div class="who">${esc(r.label)}</div>
         <div class="offer"><div class="k">Angebot</div>${offerHtml}</div>
-        <div class="normal"><div class="k">Normalpreis</div>${normalHtml}${form}</div>
-        <div class="best-v">${r.best ? `<div class="n">${eur.format(r.best.v)}</div><div class="src">${r.best.src}</div>` : '<div class="n na">kein Preis</div>'}</div>
+        <div class="normal"><div class="k">Normalpreis</div>${normalHtml}</div>
+        <div class="best-v"><div class="n">${eur.format(r.best.v)}</div><div class="src">${r.best.src}</div></div>
       </div>`;
     }).join("");
-    $("#cmp").querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => {
-      openForms.add(b.dataset.open); render();
-      $(`#cmp form[data-k="${b.dataset.open}"] input`)?.focus();
-    }));
-    $("#cmp").querySelectorAll("form.pform").forEach((f) => f.addEventListener("submit", (e) => { e.preventDefault(); sendPrice(f); }));
     return top;
-  }
-
-  async function sendPrice(form) {
-    const k = form.dataset.k, msg = form.querySelector(".msg"), btn = form.querySelector("button");
-    btn.disabled = true; msg.textContent = "";
-    try {
-      const r = await fetch("/api/prices", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ chain: k, price: form.p.value, zip: zipInput.value.trim() }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || r.status);
-      prices[k] = data.summary;
-      openForms.delete(k);
-      render();
-    } catch (err) {
-      btn.disabled = false;
-      msg.textContent = err.message;
-    }
   }
 
   function render() {
@@ -504,22 +448,26 @@
     const top = renderCompare(rows);
 
     const best = $("#best");
+    best.hidden = false;
+    best.className = "best";
     if (top) {
-      const o = top.best.src === "Angebot" ? top.offer : null;
+      const o = top.offer;
       const tag = state.flavor === "all" ? "Günstigster Preis pro Dose" : `Günstigster Preis für ${flavorLabel(state.flavor)}`;
-      const what = o
-        ? `${esc(o.title)} · ${eur.format(o.price)}${o.validTo ? " · bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""}`
-        : top.normal.prospekt ? "Normalpreis laut Prospekt" : top.normal.reference ? "Richtwert (supermarktcheck.de), melde den aktuellen Preis" : `Normalpreis aus ${top.normal.count} ${top.normal.count === 1 ? "Nutzer-Meldung" : "Nutzer-Meldungen"}`;
-      best.hidden = false;
-      best.className = "best";
+      const save = Math.round((1 - o.perCan / UVP) * 100);
+      const what = `${esc(o.title)} · ${eur.format(o.price)}${o.validTo ? " · bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""} · ${save} % unter UVP`;
       best.innerHTML = `
-        <div><div class="tag">${tag}</div><div class="big">${eur.format(top.best.v).replace(/\s?€/, "")}<small>€</small></div></div>
+        <div><div class="tag">${tag}</div><div class="big">${eur.format(o.perCan).replace(/\s?€/, "")}<small>€</small></div></div>
         <div><div class="who">${esc(top.label)}</div><div class="what">${what}</div></div>
-        ${o ? `<img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}`;
-    } else best.hidden = true;
+        <img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.remove()">`;
+    } else {
+      best.innerHTML = `
+        <div><div class="tag">Gerade kein Angebot</div><div class="big">${eur.format(UVP).replace(/\s?€/, "")}<small>€</small></div></div>
+        <div><div class="who">Überall UVP</div><div class="what">In diesem Zeitraum ist ${state.flavor === "all" ? "Monster" : esc(flavorLabel(state.flavor))} nirgends günstiger als 1,59 € pro Dose.</div></div>`;
+    }
 
     const list = base.filter((o) => !excluded.has(o.rk)).sort(byPerCan);
-    $("#offerCount").textContent = offers.length ? `${list.length} von ${offers.length} diese Woche` : "";
+    const period = state.week === "this" ? "diese Woche" : state.week === "next" ? "nächste Woche" : "insgesamt";
+    $("#offerCount").textContent = offers.length ? `${list.length} von ${offers.length} ${period}` : "";
     if (offersError) {
       $("#list").innerHTML = `<div class="state"><strong>Angebote nicht geladen</strong>${esc(offersError)}<br>Versuch es gleich nochmal.</div>`;
       return;
@@ -533,7 +481,7 @@
       $("#list").innerHTML = `<div class="state"><strong>Nichts gefunden</strong>${hint}</div>`;
       return;
     }
-    $("#list").innerHTML = list.map((o) => {
+    const rowHtml = (o) => {
       const save = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
       return `<article class="row">
         <img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -545,7 +493,23 @@
         <div class="price"><div class="total">${eur.format(o.price)}</div>${o.oldPrice ? `<div class="old">${eur.format(o.oldPrice)}</div>` : ""}</div>
         <div class="percan">${o.perCan != null ? `<div class="v">${eur.format(o.perCan)}</div><div class="l">/ Dose${o.perLitre ? " · " + eur.format(o.perLitre) + "/l" : ""}</div>` : '<div class="l">kein Literpreis</div>'}</div>
       </article>`;
-    }).join("");
+    };
+    if (state.week !== "all") { $("#list").innerHTML = list.map(rowHtml).join(""); return; }
+    // Unter „Alle“: nach Woche gruppiert, je Gruppe nach Preis pro Dose, mit Trennbalken
+    const groups = WEEK_GROUPS.map((g) => ({ ...g, items: list.filter((o) => weekGroup(o) === g.k) })).filter((g) => g.items.length);
+    $("#list").innerHTML = groups.map((g) =>
+      `<div class="wk" role="heading" aria-level="3"><span>${g.label}</span><span class="n">${g.items.length} ${g.items.length === 1 ? "Angebot" : "Angebote"}</span></div>${g.items.map(rowHtml).join("")}`).join("");
+  }
+  const WEEK_GROUPS = [
+    { k: "this", label: "Diese Woche" }, { k: "next", label: "Nächste Woche" },
+    { k: "later", label: "Später" }, { k: "none", label: "Ohne Datum" },
+  ];
+  function weekGroup(o) {
+    if (!o.validFrom && !o.validTo) return "none";
+    const vf = o.validFrom ? new Date(o.validFrom) : new Date(0);
+    if (vf <= weekRange(0)[1]) return "this";
+    if (vf <= weekRange(1)[1]) return "next";
+    return "later";
   }
 
   /* ---------- Tabs ---------- */
@@ -760,7 +724,6 @@
   });
 
   load(zipInput.value);
-  loadPrices();
   if (MAP_ENABLED) {
     $(".tabs").hidden = false;
     $("#footMap").hidden = false;

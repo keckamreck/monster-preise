@@ -187,6 +187,10 @@ async function searchAll(zip, keys, fetchImpl) {
   return lists.flat();
 }
 
+// UVP pro 0,5-l-Dose ohne Pfand. Teurer gibt es Monster nicht, alles ab UVP ist kein Angebot
+// (Preise darüber sind Datenfehler, z. B. mit Pfand gerechnet)
+export const UVP = 1.59;
+
 // Händler, die komplett ausgeblendet werden (z. B. Scheck-in Center)
 const BLOCKED_RETAILERS = /scheck[\s-]*in/i;
 export function isBlockedRetailer(o) {
@@ -206,6 +210,7 @@ export async function fetchOffers(zip, fetchImpl = fetch) {
   return results
     .filter((o) => isMonster(o) && !isBlockedRetailer(o))
     .map((o) => normalize(o, now))
+    .filter((o) => o.perCan == null || o.perCan < UVP)
     .filter((o) => {
       if (seen.has(o.id)) return false;
       seen.add(o.id);
