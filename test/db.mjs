@@ -14,18 +14,25 @@ assert.equal(r.code, 200, JSON.stringify(r.body)); assert.deepEqual(r.body.store
 const shop = { storeId: "node/123", name: "REWE Ettlinger Tor", brand: "REWE", lat: 49.0, lon: 8.4 };
 r = await call(reports, { method: "POST", body: { ...shop, status: "out" } });
 assert.equal(r.code, 200, JSON.stringify(r.body)); assert.equal(r.body.store.status, "out"); assert.equal(r.body.store.flavor, "ultra-white");
-r = await call(reports, { method: "POST", body: JSON.stringify({ ...shop, status: "ok" }) });
+r = await call(reports, { method: "POST", body: JSON.stringify({ ...shop, status: "ok" }) }, "2.2.2.2");
 assert.equal(r.body.store.status, "ok"); assert.equal(r.body.store.out, 1); assert.equal(r.body.store.ok, 1);
+assert.equal(r.body.updated, false);
+// zweite Meldung derselben IP für denselben Laden innerhalb einer Stunde ersetzt die erste (Korrektur)
+r = await call(reports, { method: "POST", body: { ...shop, status: "out" } }, "5.5.5.5");
+r = await call(reports, { method: "POST", body: { ...shop, status: "ok" } }, "5.5.5.5");
+assert.equal(r.body.updated, true); assert.equal(r.body.store.out, 1); assert.equal(r.body.store.ok, 2);
 r = await call(reports, { method: "POST", body: { ...shop, status: "out", flavor: "mango-loco" } });
-assert.equal(r.body.store.flavor, "mango-loco");
+assert.equal(r.body.store.flavor, "mango-loco"); assert.equal(r.body.updated, false, "andere Sorte zählt extra");
 r = await call(reports, { method: "GET" }); assert.equal(r.body.stores.length, 1); assert.equal(r.body.stores[0].status, "ok");
 r = await call(reports, { method: "GET", query: { flavor: "mango-loco" } }); assert.equal(r.body.stores[0].status, "out");
 r = await call(reports, { method: "GET", query: { flavor: "x'; drop" } }); assert.equal(r.code, 400);
 await q("UPDATE mp_reports SET ts = now() - interval '8 days'");
 r = await call(reports, { method: "GET" }); assert.equal(r.body.stores.length, 0, "alt raus");
 r = await call(reports, { method: "POST", body: { ...shop, status: "maybe" } }); assert.equal(r.code, 400);
-r = await call(reports, { method: "POST", body: { ...shop, name: "<b>X</b>", status: "ok", storeId: "way/9" } });
-assert.equal(r.body.store.name, "bX/b");
+r = await call(reports, { method: "POST", body: { ...shop, name: "Aral", brand: "Aral", status: "ok", storeId: "node/77" } });
+assert.equal(r.code, 400, "nur Supermärkte der bekannten Ketten");
+r = await call(reports, { method: "POST", body: { ...shop, name: "REWE <b>X</b>", status: "ok", storeId: "way/9" } });
+assert.equal(r.body.store.name, "REWE bX/b"); assert.equal(r.body.store.chain, "rewe");
 
 // Preise
 r = await call(prices, { method: "POST", body: { chain: "rewe", price: "1,79", zip: "76137" } });

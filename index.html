@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Monster-Preise</title>
-<meta name="description" content="Aktuelle Monster-Energy-Angebote in deiner Nähe, Ultra White zuerst, mit Preisvergleich pro Supermarkt.">
+<meta name="description" content="Aktuelle Monster-Energy-Angebote aus den Prospekten in deiner Nähe, Ultra White zuerst. Preisvergleich pro Supermarkt und Karte, wo es deine Sorte gerade gibt.">
 <meta name="theme-color" content="#f4f6f8">
+<meta property="og:title" content="Monster-Preise">
+<meta property="og:description" content="Monster-Energy-Angebote in deiner Nähe, Ultra White zuerst, mit Preisvergleich pro Supermarkt.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffffff' stroke='%23c9d1d9'/%3E%3Crect x='11' y='5' width='10' height='22' rx='3' fill='%23e9eef2' stroke='%230e1116' stroke-width='1.6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +26,7 @@
     --silver: linear-gradient(135deg, #ffffff 0%, #eef2f5 35%, #d9e0e6 60%, #f7f9fa 100%);
     --out: #c53030;
     --ok: #1e7a46;
+    --ok-soft: #e7f3ec;
     --none: #8a96a3;
     --display: "Big Shoulders Display", Impact, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -32,141 +35,215 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); min-height: 100vh; }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 64px; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--sans); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right)) 64px max(16px, env(safe-area-inset-left)); }
   [hidden] { display: none !important; }
+  :focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+  button { -webkit-tap-highlight-color: transparent; }
 
-  header.top { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; justify-content: space-between; }
+  /* Kopf */
+  header.top { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-end; justify-content: space-between; }
   .brand h1 { font: 900 clamp(46px, 9vw, 86px)/.86 var(--display); text-transform: uppercase; margin: 0; letter-spacing: .01em; }
   .brand h1 .w { display: inline-block; background: var(--ink); color: #fff; padding: 0 .14em; margin-left: .04em; }
-  .brand p { margin: 10px 0 0; color: var(--muted); max-width: 48ch; }
+  .brand p { margin: 12px 0 0; color: var(--muted); max-width: 50ch; }
 
   form.zip { display: flex; gap: 8px; }
   form.zip label { position: absolute; left: -9999px; }
   form.zip input {
-    width: 8.5ch; font: 600 22px var(--mono); letter-spacing: .08em; background: var(--card); color: var(--ink);
-    border: 1px solid var(--line-2); border-radius: 12px; padding: 10px 12px; outline: none;
+    width: 8.5ch; height: 48px; font: 600 22px var(--mono); letter-spacing: .08em; background: var(--card); color: var(--ink);
+    border: 1px solid var(--line-2); border-radius: 12px; padding: 0 12px; outline: none;
   }
   form.zip input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(15,108,154,.18); }
-  .btn { font: 700 14px var(--sans); cursor: pointer; border-radius: 12px; border: 0; background: var(--ink); color: #fff; padding: 0 18px; min-height: 44px; }
-  .btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line-2); }
-  :focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+  .btn { font: 700 14px var(--sans); cursor: pointer; border-radius: 12px; border: 1px solid var(--ink); background: var(--ink); color: #fff; padding: 0 18px; min-height: 48px; }
+  .btn:hover { background: #262b33; }
+  .btn.ghost { background: var(--card); color: var(--ink); border-color: var(--line-2); min-height: 40px; display: inline-flex; gap: 8px; align-items: center; }
+  .btn.ghost:hover { border-color: var(--ink); }
+  .btn[aria-busy="true"] { opacity: .65; cursor: progress; }
 
   nav.tabs { display: inline-flex; gap: 4px; margin-top: 26px; background: #e8edf1; padding: 4px; border-radius: 14px; }
-  nav.tabs button { font: 700 15px var(--sans); border: 0; background: transparent; color: var(--muted); padding: 9px 20px; border-radius: 10px; cursor: pointer; }
+  nav.tabs button { display: inline-flex; gap: 8px; align-items: center; justify-content: center; font: 700 15px var(--sans); border: 0; background: transparent; color: var(--muted); padding: 9px 20px; border-radius: 10px; cursor: pointer; }
+  nav.tabs button:hover { color: var(--ink); }
   nav.tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  nav.tabs svg { width: 16px; height: 16px; }
 
-  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-  .fsel { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
-  .flavor-select { font: 600 14px var(--sans); padding: 8px 10px; border-radius: 12px; border: 1px solid var(--ink); background: var(--card); color: var(--ink); max-width: 60vw; }
-  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; background: var(--card); }
-  .seg button { font: 600 14px var(--sans); border: 0; background: transparent; color: var(--muted); padding: 8px 14px; cursor: pointer; }
+  /* Filter */
+  .controls { display: flex; flex-direction: column; gap: 12px; margin: 22px 0 6px; }
+  .ctrl-row { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+  .fsel { display: inline-flex; gap: 8px; align-items: center; font: 600 13px var(--sans); color: var(--muted); }
+  .select {
+    appearance: none; -webkit-appearance: none; font: 600 14px var(--sans); color: var(--ink); height: 40px; max-width: 64vw;
+    padding: 0 36px 0 12px; border-radius: 12px; border: 1px solid var(--line-2); cursor: pointer;
+    background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%230e1116' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center / 11px;
+  }
+  .select:hover { border-color: var(--ink); }
+  .seg { display: inline-flex; gap: 2px; height: 40px; padding: 3px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--card); }
+  .seg button { font: 600 14px var(--sans); border: 0; background: transparent; color: var(--muted); padding: 0 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+  .seg button:hover { color: var(--ink); }
   .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip { display: inline-flex; gap: 7px; align-items: center; min-height: 34px; font: 600 13.5px var(--sans); cursor: pointer; border-radius: 999px; background: var(--card); color: var(--ink); border: 1px solid var(--line-2); padding: 0 12px 0 10px; }
+  .chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
+  .chip:hover { border-color: var(--ink); }
+  .chip .n { font: 600 11px var(--mono); color: var(--muted); }
+  .chip.empty::before { background: var(--line-2); }
+  .chip[aria-pressed="false"] { background: transparent; color: var(--muted); border-style: dashed; }
+  .chip[aria-pressed="false"]::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line-2); }
+  .chip[aria-pressed="false"] .lbl { text-decoration: line-through; }
+  .linkbtn { font: 600 13px var(--sans); background: none; border: 0; color: var(--ice); cursor: pointer; padding: 6px 4px; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Bester Preis */
   .best {
-    margin-top: 22px; display: grid; grid-template-columns: auto 1fr auto; gap: 22px; align-items: center;
-    background: var(--silver); border: 1px solid var(--line-2); border-radius: 20px; padding: 22px 26px; box-shadow: var(--shadow);
-    position: relative; overflow: hidden;
+    margin-top: 24px; display: grid; grid-template-columns: auto 1fr auto; gap: 10px 28px; align-items: center;
+    background: var(--silver); border: 1px solid var(--line-2); border-radius: 22px; padding: 22px 26px; box-shadow: var(--shadow);
   }
   .best .tag { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--ice); }
-  .best .big { font: 900 clamp(56px, 12vw, 100px)/.85 var(--display); }
+  .best .big { font: 900 clamp(64px, 12vw, 104px)/.85 var(--display); margin-top: 6px; white-space: nowrap; }
   .best .big small { font-size: .36em; margin-left: 4px; }
-  .best .who { font: 900 clamp(26px, 5vw, 42px)/1 var(--display); text-transform: uppercase; }
+  .best .save { display: inline-block; margin-top: 10px; font: 600 12px var(--mono); color: var(--ok); background: var(--ok-soft); border-radius: 6px; padding: 2px 8px; }
+  .best .who { font: 900 clamp(28px, 5vw, 44px)/1 var(--display); text-transform: uppercase; }
   .best .what { margin-top: 6px; font-size: 14px; color: var(--muted); }
-  .best img { width: 96px; height: 96px; object-fit: contain; background: #fff; border-radius: 14px; border: 1px solid var(--line); }
+  .best img { width: 104px; height: 104px; object-fit: contain; background: #fff; border-radius: 16px; border: 1px solid var(--line); }
+  .best.skel { min-height: 158px; background: linear-gradient(90deg, #fff, #eef2f5, #fff); background-size: 200% 100%; animation: sh 1.2s infinite; }
 
-  .controls { display: flex; flex-direction: column; gap: 12px; margin: 22px 0 12px; }
-  .ctrl-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { font: 600 13.5px var(--sans); cursor: pointer; border-radius: 999px; background: var(--card); color: var(--muted); border: 1px solid var(--line-2); padding: 6px 12px; }
-  .chip .n { font: 600 11px var(--mono); margin-left: 6px; opacity: .7; }
-  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .chip.empty:not([aria-pressed="true"]) { opacity: .6; }
-  select { background: var(--card); color: var(--ink); border: 1px solid var(--line-2); border-radius: 10px; padding: 6px 8px; font: 14px var(--sans); }
-
-  .list { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
-  .row { display: grid; grid-template-columns: 60px 1fr auto auto; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
-  .row:first-child { border-top: 0; }
-  .row img { width: 60px; height: 60px; object-fit: contain; background: #fff; border-radius: 10px; border: 1px solid var(--line); }
-  .row .retailer { font: 900 22px/1 var(--display); text-transform: uppercase; letter-spacing: .02em; }
-  .row .desc { color: var(--muted); font-size: 13.5px; margin-top: 4px; overflow-wrap: anywhere; }
-  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .badge { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--muted); background: #fff; }
-  .badge.white { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .badge.save { color: var(--ok); border-color: rgba(30,122,70,.4); }
-  .badge.club { color: #8a5300; border-color: rgba(138,83,0,.35); }
-  .badge.soon { color: var(--ice); border-color: rgba(15,108,154,.4); }
-  .price { text-align: right; font-family: var(--mono); }
-  .price .total { font-size: 18px; font-weight: 600; }
-  .price .old { color: var(--muted); text-decoration: line-through; font-size: 13px; }
-  .percan { text-align: right; min-width: 96px; }
-  .percan .v { font: 900 34px/1 var(--display); }
-  .percan .l { font: 12px var(--mono); color: var(--muted); }
-  .row.top { background: linear-gradient(90deg, var(--ice-soft), transparent 70%); }
-
-  .state { padding: 48px 20px; text-align: center; color: var(--muted); }
-  .state strong { display: block; color: var(--ink); font: 900 28px var(--display); text-transform: uppercase; margin-bottom: 6px; }
-  .skeleton { height: 88px; border-top: 1px solid var(--line); background: linear-gradient(90deg, transparent, rgba(14,17,22,.035), transparent); background-size: 200% 100%; animation: sh 1.2s infinite; }
-  @keyframes sh { to { background-position: -200% 0; } }
-
-  /* Vergleich */
-  h2.sec { font: 900 26px/1 var(--display); text-transform: uppercase; margin: 30px 0 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  /* Listen */
+  h2.sec { font: 900 26px/1 var(--display); text-transform: uppercase; margin: 32px 0 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
   h2.sec span { font: 400 13px var(--sans); text-transform: none; color: var(--muted); }
   .hint { color: var(--muted); font-size: 13px; margin: 10px 2px 0; }
-  .crow { display: grid; grid-template-columns: minmax(110px, 1.1fr) 1.3fr 1.3fr auto; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .list { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .badge { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--muted); background: #fff; white-space: nowrap; }
+  .badge.hl { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .badge.save { color: var(--ok); border-color: rgba(30,122,70,.4); background: var(--ok-soft); }
+  .badge.club { color: #8a5300; border-color: rgba(138,83,0,.35); }
+  .badge.soon { color: var(--ice); border-color: rgba(15,108,154,.4); background: var(--ice-soft); }
+
+  /* Vergleich: eine Zeile pro Händler */
+  .crow { display: grid; grid-template-columns: minmax(120px, 170px) 1fr minmax(110px, auto); gap: 6px 22px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
   .crow:first-child { border-top: 0; }
   .crow.top { background: linear-gradient(90deg, var(--ice-soft), transparent 70%); }
   .crow .who { font: 900 22px/1 var(--display); text-transform: uppercase; }
-  .crow .k { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .crow .v { font: 600 17px var(--mono); margin-top: 2px; }
-  .crow .v.na { font: 400 14px var(--sans); color: var(--muted); }
-  .crow .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-  .crow .best-v { text-align: right; min-width: 96px; }
-  .crow .best-v .n { font: 900 34px/1 var(--display); }
-  .crow .best-v .n.na { font: 400 14px var(--sans); color: var(--muted); }
-  .crow .best-v .src { font: 12px var(--mono); color: var(--muted); }
+  .crow .bar { height: 8px; border-radius: 99px; background: #eef1f4; overflow: hidden; }
+  .crow .bar i { display: block; height: 100%; border-radius: 99px; background: var(--ink); }
+  .crow.top .bar i { background: var(--ice); }
+  .crow .s { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin-top: 7px; font-size: 12.5px; color: var(--muted); }
+  .crow .pv { text-align: right; }
+  .crow .pv .n { font: 900 34px/1 var(--display); white-space: nowrap; }
+  .crow .pv .was { font: 12px var(--mono); color: var(--muted); margin-top: 3px; white-space: nowrap; }
+  .crow.none { padding-top: 11px; padding-bottom: 11px; }
+  .crow.none .who { color: var(--muted); }
+  .crow.none .bar i { background: var(--line-2); }
+  .crow.none .pv .n { font-size: 24px; color: var(--muted); }
+
+  /* Prospekt-Angebote */
+  .row { display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .row img { width: 64px; height: 64px; object-fit: contain; background: #fff; border-radius: 10px; border: 1px solid var(--line); }
+  .row .retailer { font: 900 22px/1 var(--display); text-transform: uppercase; letter-spacing: .02em; }
+  .row .desc { color: var(--muted); font-size: 13.5px; margin-top: 4px; overflow-wrap: anywhere; }
+  .percan { text-align: right; min-width: 104px; }
+  .percan .v { font: 900 34px/1 var(--display); white-space: nowrap; }
+  .percan .l { font: 12px var(--mono); color: var(--muted); margin-top: 3px; white-space: nowrap; }
+  .percan s { color: var(--muted); }
   .wk { display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: var(--ink); color: #fff; font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .1em; }
   .wk .n { margin-left: auto; opacity: .7; }
   .wk + .row { border-top: 0; }
-  @media (max-width: 640px) {
-    .crow { grid-template-columns: 1fr auto; gap: 8px 12px; }
-    .crow .who { grid-column: 1; }
-    .crow .best-v { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
-    .crow .offer, .crow .normal { grid-column: 1; }
-  }
+
+  .state { padding: 44px 20px; text-align: center; color: var(--muted); }
+  .state strong { display: block; color: var(--ink); font: 900 28px var(--display); text-transform: uppercase; margin-bottom: 6px; }
+  .state .acts { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; margin-top: 10px; }
+  .state.small { padding: 26px 20px; }
+  .state.small strong { font-size: 22px; }
+  .skeleton { height: 76px; border-top: 1px solid var(--line); background: linear-gradient(90deg, transparent, rgba(14,17,22,.035), transparent); background-size: 200% 100%; animation: sh 1.2s infinite; }
+  .skeleton:first-child { border-top: 0; }
+  @keyframes sh { to { background-position: -200% 0; } }
 
   /* Karte */
-  .map-head { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: center; margin: 22px 0 12px; }
-  .map-head p { margin: 0; color: var(--muted); max-width: 60ch; }
-  #map { height: min(70vh, 620px); border-radius: 18px; border: 1px solid var(--line-2); box-shadow: var(--shadow); background: #eef2f5; }
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 13px; color: var(--muted); }
-  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(14,17,22,.25); }
-  .map-note { margin-top: 8px; font-size: 13px; color: var(--muted); min-height: 1.4em; }
+  .map-head { display: flex; flex-wrap: wrap; gap: 12px 16px; justify-content: space-between; align-items: center; margin: 22px 0 12px; }
+  .map-head p { margin: 0; color: var(--muted); max-width: 52ch; }
+  .map-head p b { color: var(--ink); }
+  .map-chips { margin-bottom: 12px; }
+  .map-chips:empty { display: none; }
+  .map-tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+  .map-tools svg { width: 16px; height: 16px; }
+  #map { height: min(70vh, 620px); border-radius: 18px; border: 1px solid var(--line-2); box-shadow: var(--shadow); background: #eef2f5; z-index: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .dot { display: inline-block; flex: none; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(14,17,22,.25); background: var(--none); }
+  .dot.ok { background: var(--ok); } .dot.out { background: var(--out); } .dot.old { opacity: .5; }
+  .map-note { margin-top: 6px; font-size: 13px; color: var(--muted); min-height: 1.4em; }
   .tiles-white { filter: grayscale(1) brightness(1.06) contrast(.92); }
-  .leaflet-popup-content-wrapper { border-radius: 14px; }
-  .leaflet-popup-content { margin: 14px 16px; font: 14px/1.4 var(--sans); min-width: 210px; }
-  .pop h3 { margin: 0; font: 900 20px/1.05 var(--display); text-transform: uppercase; }
+  .leaflet-container { font-family: var(--sans); }
+  .leaflet-bar { border: 1px solid var(--line-2) !important; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+  .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 10px 30px rgba(14,17,22,.18); }
+  .leaflet-popup-content { margin: 14px 16px; font: 14px/1.4 var(--sans); min-width: 220px; }
+  .pop h3 { margin: 0 18px 0 0; font: 900 21px/1.05 var(--display); text-transform: uppercase; }
   .pop .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
-  .pop .st { margin: 10px 0; font-size: 13.5px; }
+  .pop .st { margin: 10px 0 12px; font-size: 13.5px; }
   .pop .st b.out { color: var(--out); } .pop .st b.ok { color: var(--ok); }
   .pop .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .pop .acts button { font: 700 13px var(--sans); border-radius: 10px; padding: 9px 6px; cursor: pointer; border: 1px solid var(--line-2); background: #fff; color: var(--ink); }
-  .pop .acts button.out { background: var(--out); color: #fff; border-color: var(--out); }
-  .pop .acts button:disabled { opacity: .5; cursor: default; }
+  .pop .acts button { font: 700 13px var(--sans); border-radius: 10px; padding: 9px 6px; min-height: 40px; cursor: pointer; border: 1.5px solid; background: #fff; }
+  .pop .acts button.ok { color: var(--ok); border-color: rgba(30,122,70,.45); }
+  .pop .acts button.out { color: var(--out); border-color: rgba(197,48,48,.45); }
+  .pop .acts button.ok:hover, .pop .acts button.ok[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .pop .acts button.out:hover, .pop .acts button.out[aria-pressed="true"] { background: var(--out); border-color: var(--out); color: #fff; }
+  .pop .acts button:disabled { opacity: .5; cursor: progress; }
   .pop .msg { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .pop .msg:empty { display: none; }
 
-  footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+  .rrow { display: grid; grid-template-columns: 14px 1fr auto; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 12px 18px; border: 0; border-top: 1px solid var(--line); background: var(--card); font: inherit; color: inherit; cursor: pointer; }
+  .rrow:first-child { border-top: 0; }
+  .rrow:hover { background: #f8fafb; }
+  .rrow .dot { margin: 0; }
+  .rrow .nm { display: block; font-weight: 700; }
+  .rrow .sub { display: block; color: var(--muted); font-size: 12.5px; }
+  .rrow .st { text-align: right; font-size: 13.5px; }
+  .rrow .st b.ok { color: var(--ok); } .rrow .st b.out { color: var(--out); }
+  .rrow .st span { display: block; color: var(--muted); font-size: 12px; }
+
+  footer { margin-top: 32px; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
 
   @media (max-width: 640px) {
-    .best { grid-template-columns: 1fr auto; padding: 18px; }
-    .best img { display: none; }
-    .row { grid-template-columns: 46px 1fr auto; gap: 12px; padding: 12px 14px; }
-    .row img { width: 46px; height: 46px; }
-    .row .price { grid-column: 2; text-align: left; display: flex; gap: 10px; align-items: baseline; }
-    .row .percan { grid-row: 1; grid-column: 3; }
+    .wrap { padding-top: 20px; }
+    form.zip { width: 100%; }
+    form.zip input { flex: 1; min-width: 0; width: auto; }
     nav.tabs { display: flex; } nav.tabs button { flex: 1; }
+    .fsel { width: 100%; } .fsel .select { flex: 1; max-width: none; }
+    .seg { width: 100%; } .seg button { flex: 1; padding: 0 6px; }
+
+    .best { grid-template-columns: 1fr auto; padding: 18px; gap: 14px 16px; }
+    .best .b-price { grid-row: 1; grid-column: 1; }
+    .best img { grid-row: 1; grid-column: 2; width: 76px; height: 76px; align-self: start; }
+    .best .b-info { grid-row: 2; grid-column: 1 / -1; }
+
+    .crow { grid-template-columns: 1fr auto; gap: 8px 14px; padding: 12px 14px; }
+    .crow .who { grid-row: 1; grid-column: 1; align-self: end; }
+    .crow .pv { grid-row: 1 / span 2; grid-column: 2; }
+    .crow .mid { grid-row: 2; grid-column: 1; }
+    .crow .pv .n { font-size: 30px; }
+
+    /* Händler und Preis oben, Beschreibung und Badges darunter über die volle Breite */
+    .row { grid-template-columns: 44px 1fr auto; gap: 0 12px; padding: 12px 14px; align-items: center; }
+    .row .info { display: contents; }
+    .row img { grid-row: 1 / span 3; grid-column: 1; align-self: start; width: 44px; height: 44px; }
+    .row .retailer { grid-row: 1; grid-column: 2; font-size: 20px; }
+    .row .percan { grid-row: 1; grid-column: 3; min-width: 0; }
+    .row .desc { grid-row: 2; grid-column: 2 / 4; margin-top: 6px; }
+    .row .badges { grid-row: 3; grid-column: 2 / 4; }
+    .percan .v { font-size: 28px; }
+    .percan .pl, .percan .was { display: none; }
+
+    .map-tools { width: 100%; flex-wrap: nowrap; }
+    .map-tools .fsel { flex: 1 1 0; width: auto; min-width: 0; }
+    .fsel .select { min-width: 0; }
+    .hide-sm { display: none; }
+    /* Händler über der Karte als wischbare Zeile, damit die Karte weit oben bleibt */
+    .map-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 12px; padding: 2px 16px; }
+    .map-chips::-webkit-scrollbar { display: none; }
+    .map-chips .chip, .map-chips .linkbtn { flex: none; }
+    .rrow { padding: 12px 14px; }
   }
-  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton, .best.skel { animation: none; } }
 </style>
 </head>
 <body>
@@ -174,188 +251,252 @@
   <header class="top">
     <div class="brand">
       <h1>Monster-<br>Preise <span class="w">White</span></h1>
-      <p>Monster-Preise im Vergleich, Ultra White zuerst: Prospekt-Angebote in deiner Nähe und Normalpreise pro Supermarkt. Pro Dose, Pfand nicht eingerechnet.</p>
+      <p>Prospekt-Angebote für Monster Energy in deiner Nähe, Ultra White zuerst. Preise pro 0,5-l-Dose ohne Pfand, dazu eine Karte, wo es deine Sorte gerade gibt.</p>
     </div>
-    <form class="zip" id="zipForm">
+    <form class="zip" id="zipForm" role="search">
       <label for="zip">Postleitzahl</label>
-      <input id="zip" inputmode="numeric" pattern="\d{5}" maxlength="5" placeholder="PLZ" autocomplete="postal-code" required>
-      <button class="btn" type="submit">Suchen</button>
+      <input id="zip" inputmode="numeric" pattern="\d{5}" maxlength="5" placeholder="PLZ" autocomplete="postal-code" required title="Fünfstellige Postleitzahl">
+      <button class="btn" id="zipBtn" type="submit">Suchen</button>
     </form>
   </header>
 
-  <!-- Tabs nur sichtbar, solange die Karte in Entwicklung ist und MAP_ENABLED gilt -->
-  <nav class="tabs" role="tablist" aria-label="Ansicht" hidden>
-    <button role="tab" id="tab-preise" aria-selected="true" aria-controls="view-preise">Preise</button>
-    <button role="tab" id="tab-karte" aria-selected="false" aria-controls="view-karte">Karte</button>
+  <nav class="tabs" role="tablist" aria-label="Ansicht">
+    <button type="button" role="tab" id="tab-preise" aria-selected="true" aria-controls="view-preise">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Preise
+    </button>
+    <button type="button" role="tab" id="tab-karte" aria-selected="false" aria-controls="view-karte" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Karte
+    </button>
   </nav>
 
-  <!-- PREISE -->
-  <section id="view-preise" role="tabpanel" aria-labelledby="tab-preise">
-    <section id="best" hidden></section>
+  <main>
+    <!-- PREISE -->
+    <section id="view-preise" role="tabpanel" aria-labelledby="tab-preise">
+      <section id="best" class="best" aria-live="polite" hidden></section>
 
-    <div class="controls">
-      <div class="ctrl-row">
-        <div class="filters">
-          <!-- Sortenauswahl in Produktion ausgeblendet, siehe FLAVOR_SELECT_ENABLED -->
-          <label class="fsel" id="flavorWrap" hidden>Sorte <select id="flavor" class="flavor-select"></select></label>
+      <div class="controls">
+        <div class="ctrl-row">
+          <label class="fsel">Sorte <select id="flavor" class="select"></select></label>
           <div class="seg" role="group" aria-label="Zeitraum" id="weekSeg">
             <button type="button" data-w="this" aria-pressed="true">Diese Woche</button>
             <button type="button" data-w="next" aria-pressed="false">Nächste Woche</button>
             <button type="button" data-w="all" aria-pressed="false">Alle</button>
           </div>
         </div>
+        <div class="chips" id="chips" role="group" aria-label="Händler ein- und ausblenden"></div>
       </div>
-      <div class="chips" id="chips" role="group" aria-label="Händler filtern"></div>
-    </div>
 
-    <h2 class="sec">Preisvergleich <span id="cmpSub">Ultra White 0,5 l, pro Dose</span></h2>
-    <div class="list cmp" id="cmp" aria-live="polite"></div>
-    <p class="hint" id="cmpHint">„Normalpreis“ ist die UVP von 1,59 € pro 0,5-l-Dose (ohne Pfand), die überall gilt. Alles darunter ist ein Angebot.</p>
+      <h2 class="sec">Preisvergleich <span id="cmpSub"></span></h2>
+      <div class="list" id="cmp" aria-live="polite"></div>
+      <p class="hint">Normalpreis ist überall die UVP von 1,59 € pro 0,5-l-Dose (ohne Pfand), alles darunter ist ein Angebot. Der Balken zeigt, wie viel der UVP du zahlst.</p>
 
-    <h2 class="sec">Prospekt-Angebote <span id="offerCount"></span></h2>
-    <main class="list" id="list" aria-live="polite"></main>
-  </section>
+      <div id="offersSec">
+        <h2 class="sec">Prospekt-Angebote <span id="offerCount"></span></h2>
+        <div class="list" id="list" aria-live="polite"></div>
+      </div>
+    </section>
 
-  <!-- KARTE (in Entwicklung, in Produktion ausgeblendet, siehe MAP_ENABLED) -->
-  <section id="view-karte" role="tabpanel" aria-labelledby="tab-karte" hidden>
-    <div class="map-head">
-      <p>Tipp auf einen Laden und melde, ob es dort gerade <b id="mapFlavor">Ultra White</b> gibt. Meldungen gelten 7 Tage.</p>
-      <label class="fsel">Sorte <select id="flavorMap" class="flavor-select"></select></label>
-      <button class="btn ghost" id="locate" type="button">Mein Standort</button>
-    </div>
-    <div id="map" role="region" aria-label="Karte der Läden"></div>
-    <div class="legend">
-      <span><i class="dot" style="background:var(--out)"></i><span class="lg-out">Ausverkauft gemeldet</span></span>
-      <span><i class="dot" style="background:var(--ok)"></i><span class="lg-ok">Vorrätig gemeldet</span></span>
-      <span><i class="dot" style="background:var(--none)"></i>Noch keine Meldung</span>
-    </div>
-    <div class="map-note" id="mapNote" aria-live="polite"></div>
-  </section>
+    <!-- KARTE -->
+    <section id="view-karte" role="tabpanel" aria-labelledby="tab-karte" hidden>
+      <div class="map-head">
+        <p>Tipp auf einen Supermarkt und melde, ob es dort gerade <b id="mapFlavor">Ultra White</b> gibt. Meldungen gelten 7 Tage.</p>
+        <div class="map-tools">
+          <label class="fsel">Sorte <select id="flavorMap" class="select"></select></label>
+          <button class="btn ghost" id="locate" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span><span class="hide-sm">Mein </span>Standort</span>
+          </button>
+        </div>
+      </div>
+      <div class="chips map-chips" id="mapChips" role="group" aria-label="Supermärkte auf der Karte ein- und ausblenden"></div>
+      <div id="map" role="region" aria-label="Karte der Supermärkte"></div>
+      <div class="legend">
+        <span><i class="dot ok"></i><span id="lgOk">White da</span></span>
+        <span><i class="dot out"></i><span id="lgOut">Kein White</span></span>
+        <span><i class="dot ok old"></i>Meldung älter als 2 Tage</span>
+        <span><i class="dot"></i>Noch keine Meldung</span>
+      </div>
+      <div class="map-note" id="mapNote" aria-live="polite"></div>
+
+      <h2 class="sec">Meldungen im Ausschnitt <span id="repCount"></span></h2>
+      <div class="list" id="repList" aria-live="polite"></div>
+    </section>
+  </main>
 
   <footer>
-    Angebote: Prospektdaten über marktguru.de, ohne Gewähr. Preis pro Dose aus dem Literpreis berechnet (0,5 l, sofern nicht anders angegeben). „Versch. Sorten“ heißt: White ist wahrscheinlich dabei, aber nicht garantiert.
-    <span id="footMap" hidden>Läden: © OpenStreetMap-Mitwirkende. Karte: © OpenStreetMap.</span> Meldungen kommen von Nutzern.
+    Angebote: Prospektdaten über marktguru.de, ohne Gewähr. Preis pro Dose aus dem Literpreis berechnet (0,5 l, sofern nicht anders angegeben). „Versch. Sorten“ heißt: deine Sorte ist wahrscheinlich dabei, aber nicht garantiert.
+    Läden und Karte: © OpenStreetMap-Mitwirkende. Meldungen kommen von Nutzern.
     Private Fan-Seite, kein offizielles Angebot von Monster Energy.
   </footer>
 </div>
 
 <script>
 (() => {
-  const $ = (s) => document.querySelector(s);
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const eur = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+  const num = (v) => eur.format(v).replace(/\s?€/, "");
   const dfmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   };
-  // Features in Entwicklung: in Produktion aus. Lokal (localhost) alle an, online einzeln per
-  // ?dev=karte, ?dev=sorte oder kombiniert ?dev=karte,sorte
-  const IS_LOCAL = ["localhost", "127.0.0.1"].includes(location.hostname);
-  const DEV = new Set((new URLSearchParams(location.search).get("dev") || "").split(",").map((x) => x.trim()));
-  const devOn = (name) => IS_LOCAL || DEV.has(name);
-  const MAP_ENABLED = devOn("karte");
-  const FLAVOR_SELECT_ENABLED = devOn("sorte"); // ohne Auswahl immer Ultra White
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const netErr = (e) => (e instanceof TypeError ? "Keine Verbindung zum Server." : e.message);
 
   /* ---------- Händler ---------- */
   const RETAILERS = [
     ["aldi-sued", "Aldi Süd", /aldi\s*s(ü|ue)d/],
     ["aldi-nord", "Aldi Nord", /aldi\s*nord/],
-    ["edeka", "Edeka", /edeka|e\s*center|marktkauf/],
+    ["edeka", "Edeka", /edeka|\be\s*-?\s*center\b|marktkauf/],
     ["kaufland", "Kaufland", /kaufland/],
     ["lidl", "Lidl", /lidl/],
     ["netto", "Netto", /netto/],
-    ["norma", "Norma", /norma/],
+    ["norma", "Norma", /\bnorma\b/],
     ["penny", "Penny", /penny/],
     ["rewe", "REWE", /rewe/],
     ["globus", "Globus", /globus/],
   ];
+  // Schlüssel und Namen müssen zu lib/chains.js passen (test/chains.mjs prüft das)
   const ALWAYS = new Set(["edeka", "kaufland", "lidl", "rewe", "aldi-sued", "netto", "penny", "norma"]);
   function retailerKey(name) {
     const n = String(name || "").toLowerCase();
     const hit = RETAILERS.find(([, , re]) => re.test(n));
     return hit ? hit[0] : "x-" + n.replace(/[^a-z0-9äöüß]+/g, "-");
   }
-  function retailerLabel(key, fallback) {
+  // Kette eines Ladens wie chainOf in lib/chains.js („Aldi“ ohne Zusatz grob nach Region)
+  function chainOf(p) {
+    if (!p) return null;
+    if (p.chain) return p.chain;
+    const t = `${p.brand || ""} ${p.name || ""}`.toLowerCase();
+    const hit = RETAILERS.find(([, , re]) => re.test(t));
+    if (hit) return hit[0];
+    if (/\baldi\b/.test(t)) return p.lat < 50.35 || (p.lon < 10.2 && p.lat < 51.4) ? "aldi-sued" : "aldi-nord";
+    return null;
+  }
+  function labelFor(key) {
     const hit = RETAILERS.find(([k]) => k === key);
-    return hit ? hit[1] : fallback;
+    if (hit) return hit[1];
+    const any = offers.find((o) => o.rk === key);
+    return any ? any.retailer : key;
   }
 
-  /* ---------- Preise ---------- */
-  let offers = [];
-  let excluded = new Set();
-  const FLAVORS = [
-    ["ultra-white", "Ultra White", "White"], ["all", "Alle Sorten", "Monster"],
-    ["original", "Original (grün)", "Original"], ["zero-sugar", "Zero Sugar", "Zero Sugar"],
-    ["ultra-paradise", "Ultra Paradise", "Paradise"], ["ultra-rosa", "Ultra Rosá", "Rosá"],
-    ["ultra-fiesta", "Ultra Fiesta Mango", "Fiesta"], ["ultra-violet", "Ultra Violet", "Violet"],
-    ["ultra-watermelon", "Ultra Watermelon", "Watermelon"], ["ultra-strawberry", "Ultra Strawberry Dreams", "Strawberry"],
-    ["ultra-citron", "Ultra Citron", "Citron"], ["ultra-gold", "Ultra Gold", "Gold"], ["ultra-blue", "Ultra Blue Hawaiian", "Blue Hawaiian"],
-    ["mango-loco", "Juiced Mango Loco", "Mango Loco"], ["pipeline-punch", "Juiced Pipeline Punch", "Pipeline Punch"],
-    ["pacific-punch", "Juiced Pacific Punch", "Pacific Punch"], ["khaotic", "Juiced Khaotic", "Khaotic"],
-    ["monarch", "Juiced Monarch", "Monarch"], ["bad-apple", "Juiced Bad Apple", "Bad Apple"],
-    ["aussie-lemonade", "Aussie Lemonade", "Aussie Lemonade"], ["ripper", "Juiced Ripper", "Ripper"],
-    ["lewis-hamilton", "Lewis Hamilton Zero", "LH44"], ["assault", "Assault", "Assault"],
-    ["nitro", "Nitro", "Nitro"], ["reserve", "Reserve", "Reserve"], ["rehab", "Rehab", "Rehab"],
+  /* ---------- Sorten ---------- */
+  // [Schlüssel, Name, Kurzname]. Schlüssel müssen zu FLAVORS in api/offers.js passen (test/flavors.mjs prüft das).
+  const FLAVOR_GROUPS = [
+    ["Ultra (zuckerfrei)", [
+      ["ultra-white", "Ultra White", "White"], ["ultra-paradise", "Ultra Paradise", "Paradise"],
+      ["ultra-rosa", "Ultra Rosá", "Rosá"], ["ultra-fiesta", "Ultra Fiesta Mango", "Fiesta"],
+      ["ultra-violet", "Ultra Violet", "Violet"], ["ultra-watermelon", "Ultra Watermelon", "Watermelon"],
+      ["ultra-strawberry", "Ultra Strawberry Dreams", "Strawberry"], ["ultra-peachy-keen", "Ultra Peachy Keen", "Peachy Keen"],
+      ["ultra-ruby-red", "Ultra Fantasy Ruby Red", "Ruby Red"], ["ultra-citron", "Ultra Citron", "Citron"],
+      ["ultra-gold", "Ultra Gold", "Gold"], ["ultra-blue", "Ultra Blue Hawaiian", "Blue Hawaiian"],
+    ]],
+    ["Juiced", [
+      ["mango-loco", "Juiced Mango Loco", "Mango Loco"], ["pipeline-punch", "Juiced Pipeline Punch", "Pipeline Punch"],
+      ["pacific-punch", "Juiced Pacific Punch", "Pacific Punch"], ["rio-punch", "Juiced Rio Punch", "Rio Punch"],
+      ["khaotic", "Juiced Khaotic", "Khaotic"], ["monarch", "Juiced Monarch", "Monarch"],
+      ["bad-apple", "Juiced Bad Apple", "Bad Apple"], ["aussie-lemonade", "Aussie Lemonade", "Aussie Lemonade"],
+      ["ripper", "Juiced Ripper", "Ripper"],
+    ]],
+    ["Klassiker und Specials", [
+      ["original", "Original (grün)", "Original"], ["zero-sugar", "Zero Sugar", "Zero Sugar"],
+      ["lewis-hamilton", "Lewis Hamilton Zero", "LH44"], ["lando-norris", "Lando Norris Zero", "Lando Norris"],
+      ["the-doctor", "The Doctor (VR46)", "The Doctor"], ["assault", "Assault", "Assault"],
+      ["nitro", "Nitro", "Nitro"], ["reserve", "Reserve", "Reserve"], ["rehab", "Rehab", "Rehab"],
+    ]],
   ];
-  const flavorLabel = (k) => (FLAVORS.find((f) => f[0] === k) || [k, k])[1];
+  const FLAVORS = FLAVOR_GROUPS.flatMap(([, items]) => items);
+  const flavorLabel = (k) => (k === "all" ? "Alle Sorten" : (FLAVORS.find((f) => f[0] === k) || [k, k])[1]);
   const flavorShort = (k) => (FLAVORS.find((f) => f[0] === k) || [k, k, k])[2];
   // UVP pro 0,5-l-Dose ohne Pfand: gilt überall als Normalpreis, mehr kostet eine Dose nicht
   const UVP = 1.59;
 
-  // Sorte startet immer mit Ultra White
-  const state = { flavor: "ultra-white", week: "this" };
+  // Sorte startet immer mit Ultra White. Die Karte braucht eine konkrete Sorte, bei „Alle Sorten“ bleibt dort die letzte.
+  const state = { flavor: "ultra-white", mapFlavor: "ultra-white", week: "this" };
 
-  const zipInput = $("#zip");
-  zipInput.value = new URLSearchParams(location.search).get("plz") || store.get("mp.zip") || "76137";
-  document.querySelectorAll(".flavor-select").forEach((sel) => {
-    sel.innerHTML = FLAVORS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("");
-    sel.value = state.flavor;
-    sel.addEventListener("change", () => setFlavor(sel.value));
-  });
-  function setFlavor(k) {
-    state.flavor = k;
-    document.querySelectorAll(".flavor-select").forEach((x) => (x.value = k));
-    const mapK = k === "all" ? "ultra-white" : k;
-    $("#flavorMap").value = mapK;
-    $("#mapFlavor").textContent = flavorLabel(mapK);
-    $(".lg-out").textContent = `Kein ${flavorShort(mapK)} gemeldet`;
-    $(".lg-ok").textContent = `${flavorShort(mapK)} da`;
-    render();
-    if (map) reloadReports();
+  function fillFlavorSelect(sel, withAll) {
+    const opt = ([k, l]) => `<option value="${k}">${esc(l)}</option>`;
+    sel.innerHTML = opt(FLAVORS[0]) + (withAll ? opt(["all", "Alle Sorten"]) : "") +
+      FLAVOR_GROUPS.map(([g, items]) => `<optgroup label="${esc(g)}">${items.filter(([k]) => k !== FLAVORS[0][0]).map(opt).join("")}</optgroup>`).join("");
   }
-  $("#weekSeg").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
-    state.week = b.dataset.w;
-    $("#weekSeg").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  fillFlavorSelect($("#flavor"), true);
+  fillFlavorSelect($("#flavorMap"), false);
+  $("#flavor").addEventListener("change", (e) => setFlavor(e.target.value));
+  $("#flavorMap").addEventListener("change", (e) => setFlavor(e.target.value));
+
+  function setFlavor(k) {
+    const prevMap = state.mapFlavor;
+    state.flavor = k;
+    if (k !== "all") state.mapFlavor = k;
+    syncFlavorUi();
     render();
-  }));
+    if (map && state.mapFlavor !== prevMap) reloadReports();
+  }
+  function syncFlavorUi() {
+    $("#flavor").value = state.flavor;
+    $("#flavorMap").value = state.mapFlavor;
+    const s = flavorShort(state.mapFlavor);
+    $("#mapFlavor").textContent = flavorLabel(state.mapFlavor);
+    $("#lgOk").textContent = `${s} da`;
+    $("#lgOut").textContent = `Kein ${s}`;
+  }
 
-  $("#zipForm").addEventListener("submit", (e) => { e.preventDefault(); load(zipInput.value.trim()); if (map) centerOnZip(zipInput.value.trim()); });
+  $$("#weekSeg button").forEach((b) => b.addEventListener("click", () => setWeek(b.dataset.w)));
+  function setWeek(w) {
+    state.week = w;
+    $$("#weekSeg button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.w === w)));
+    render();
+  }
 
+  /* ---------- Angebote laden ---------- */
+  const zipInput = $("#zip");
+  zipInput.value = (new URLSearchParams(location.search).get("plz") || store.get("mp.zip") || "76137").replace(/\D/g, "").slice(0, 5);
+  zipInput.addEventListener("input", () => { zipInput.value = zipInput.value.replace(/\D/g, "").slice(0, 5); });
+  $("#zipForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const zip = zipInput.value.trim();
+    if (!/^\d{5}$/.test(zip)) { zipInput.focus(); return; }
+    zipInput.blur();
+    load(zip);
+    if (map) centerOnZip(zip);
+  });
+
+  let offers = [];
+  let offersError = null;
+  let loading = true;
+  let reqId = 0;
+  const excluded = new Set();
 
   async function load(zip) {
     if (!/^\d{5}$/.test(zip)) { zipInput.focus(); return; }
     store.set("mp.zip", zip);
     history.replaceState(null, "", "?plz=" + zip + location.hash);
-    $("#best").hidden = true;
-    $("#list").innerHTML = '<div class="skeleton"></div>'.repeat(2);
-    $("#cmp").innerHTML = '<div class="skeleton"></div>'.repeat(4);
+    const my = ++reqId;
+    loading = true;
+    $("#zipBtn").setAttribute("aria-busy", "true");
+    render();
+    let data = null, err = null;
     try {
       const r = await fetch("/api/offers?zip=" + zip);
-      const data = await r.json();
+      data = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(data.error || "Fehler " + r.status);
-      offers = data.offers.map((o) => ({ ...o, rk: retailerKey(o.retailer) }));
-      offersError = null;
-    } catch (err) {
-      offers = [];
-      offersError = err.message;
+    } catch (e) {
+      err = netErr(e);
     }
+    if (my !== reqId) return; // inzwischen neue PLZ gesucht
+    offers = err ? [] : (data.offers || []).map((o) => ({ ...o, rk: retailerKey(o.retailer) }));
+    offersError = err;
+    loading = false;
+    $("#zipBtn").removeAttribute("aria-busy");
     render();
   }
-  let offersError = null;
 
+  /* ---------- Filter ---------- */
   const flavorsOf = (o) => o.flavors || (o.variant === "white" ? ["ultra-white"] : ["*"]);
-  const variantOk = (o) => state.flavor === "all" || flavorsOf(o).includes(state.flavor) || flavorsOf(o).includes("*");
+  const isAssorted = (o) => flavorsOf(o).includes("*");
+  const exactFlavor = (o) => state.flavor !== "all" && flavorsOf(o).includes(state.flavor);
+  const variantOk = (o) => state.flavor === "all" || exactFlavor(o) || isAssorted(o);
+  const upcoming = (o) => !!o.validFrom && new Date(o.validFrom) > new Date();
   // Woche = Montag 0:00 bis Sonntag 23:59 (lokale Zeit)
   function weekRange(offset) {
     const d = new Date(); d.setHours(0, 0, 0, 0);
@@ -371,38 +512,58 @@
     const start = state.week === "this" ? new Date() : from; // diese Woche: nur was noch gilt
     return vf <= to && vt >= start;
   };
+  // günstigste pro Dose zuerst, bei Gleichstand genau passende Sorte vor „versch. Sorten“
+  const byPerCan = (a, b) => (a.perCan ?? 99) - (b.perCan ?? 99) || exactFlavor(b) - exactFlavor(a) || a.price - b.price;
+  const PERIOD = { this: "diese Woche", next: "nächste Woche", all: "alle Zeiträume" };
 
+  // Händler-Auswahl gilt für Preise und Karte. Zur Auswahl stehen die großen Ketten, alle Händler mit Angeboten
+  // und die Ketten, deren Läden auf der Karte geladen sind.
+  function chipKeys() {
+    const keys = new Set([...ALWAYS, ...offers.map((o) => o.rk)]);
+    places.forEach((p) => p.chain && keys.add(p.chain));
+    return keys;
+  }
+  function chipHtml(items) {
+    return items.sort((a, b) => a.label.localeCompare(b.label, "de")).map((i) =>
+      `<button type="button" class="chip${i.n ? "" : " empty"}" aria-pressed="${!excluded.has(i.k)}" data-k="${esc(i.k)}"><span class="lbl">${esc(i.label)}</span><span class="n" aria-label="${i.n} ${i.unit}">${i.n}</span></button>`).join("") +
+      (excluded.size ? '<button type="button" class="linkbtn" data-k="">Alle Händler zeigen</button>' : "");
+  }
   function buildChips(base) {
     const counts = new Map();
     base.forEach((o) => counts.set(o.rk, (counts.get(o.rk) || 0) + 1));
-    const keys = new Set([...ALWAYS, ...counts.keys()]);
-    const items = [...keys].map((k) => {
-      const any = offers.find((o) => o.rk === k);
-      return { k, label: retailerLabel(k, any ? any.retailer : k), n: counts.get(k) || 0 };
-    }).sort((a, b) => a.label.localeCompare(b.label, "de"));
-    $("#chips").innerHTML = items.map((i) =>
-      `<button type="button" class="chip ${i.n ? "" : "empty"}" aria-pressed="${!excluded.has(i.k)}" data-k="${esc(i.k)}">${esc(i.label)}<span class="n">${i.n}</span></button>`).join("");
-    $("#chips").querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => {
+    const keys = new Set([...chipKeys(), ...counts.keys()]);
+    $("#chips").innerHTML = chipHtml([...keys].map((k) => ({ k, label: labelFor(k), n: counts.get(k) || 0, unit: "Angebote" })));
+  }
+  for (const box of [$("#chips"), $("#mapChips")]) {
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
       const k = b.dataset.k;
-      excluded.has(k) ? excluded.delete(k) : excluded.add(k);
+      if (!k) excluded.clear();
+      else if (excluded.has(k)) excluded.delete(k);
+      else excluded.add(k);
       render();
-    }));
+      refreshMap();
+      (k ? $(`[data-k="${CSS.escape(k)}"]`, box) : $(".chip", box))?.focus();
+    });
   }
 
-  // Angebote immer nach Preis pro Dose sortiert (günstigste zuerst)
-  const byPerCan = (a, b) => (a.perCan ?? 99) - (b.perCan ?? 99) || a.price - b.price;
-
-  function validity(o) {
-    if (!o.validTo) return "";
-    const to = new Date(o.validTo), from = new Date(o.validFrom);
-    if (!o.active && from > new Date()) return `<span class="badge soon">ab ${dfmt.format(from)}</span>`;
-    return `<span class="badge">bis ${dfmt.format(to)}</span>`;
+  /* ---------- Darstellung ---------- */
+  const hlFlavor = () => (state.flavor === "all" ? "ultra-white" : state.flavor);
+  function flavorBadges(o) {
+    const f = flavorsOf(o), hl = hlFlavor();
+    const named = f.filter((x) => x !== "*").sort((a, b) => (b === hl) - (a === hl));
+    return named.map((k) => `<span class="badge${k === hl ? " hl" : ""}">${esc(flavorShort(k))}</span>`).join("") +
+      (f.includes("*") ? '<span class="badge">versch. Sorten</span>' : "");
   }
-  const variantBadge = (o) => {
-    const f = flavorsOf(o);
-    const named = f.filter((x) => x !== "*").map((k) => `<span class="badge ${k === "ultra-white" ? "white" : ""}">${esc(flavorShort(k))}</span>`).join("");
-    return named + (f.includes("*") ? '<span class="badge">versch. Sorten</span>' : "");
-  };
+  function validityBadge(o) {
+    if (upcoming(o)) return `<span class="badge soon">ab ${dfmt.format(new Date(o.validFrom))}</span>`;
+    return o.validTo ? `<span class="badge">bis ${dfmt.format(new Date(o.validTo))}</span>` : "";
+  }
+  function validityText(o) {
+    const to = o.validTo ? "bis " + dfmt.format(new Date(o.validTo)) : "";
+    return upcoming(o) ? `ab ${dfmt.format(new Date(o.validFrom))}${to ? " " + to : ""}` : to;
+  }
   function ago(ts) {
     const m = Math.round((Date.now() - ts) / 60000);
     if (m < 60) return `vor ${Math.max(1, m)} Min.`;
@@ -412,99 +573,84 @@
     return `vor ${d} ${d === 1 ? "Tag" : "Tagen"}`;
   }
 
-  /* Vergleichstabelle: eine Zeile pro Händler */
+  /* Vergleich: eine Zeile pro Händler, günstigstes Angebot im Zeitraum oder UVP */
   function compareRows(base) {
     const keys = new Set([...ALWAYS, ...base.map((o) => o.rk)]);
     return [...keys].filter((k) => !excluded.has(k)).map((k) => {
-      const own = base.filter((o) => o.rk === k && o.perCan != null).sort(byPerCan);
-      const offerNow = state.week === "this" ? own.find((o) => o.active) : own[0];
-      const offer = offerNow || own[0] || null;
-      const normal = { median: UVP, uvp: true };
-      const cands = [{ v: UVP, src: "UVP" }];
-      if (offerNow) cands.unshift({ v: offerNow.perCan, src: "Angebot" });
-      const any = offers.find((o) => o.rk === k);
-      return { k, label: retailerLabel(k, any ? any.retailer : k), offer, normal, best: cands[0] || null };
-    }).sort((a, b) => (a.best?.v ?? 99) - (b.best?.v ?? 99) || a.label.localeCompare(b.label, "de"));
+      const offer = base.filter((o) => o.rk === k && o.perCan != null).sort(byPerCan)[0] || null;
+      return { k, label: labelFor(k), offer, price: offer ? offer.perCan : UVP };
+    }).sort((a, b) => a.price - b.price || !!b.offer - !!a.offer || a.label.localeCompare(b.label, "de"));
   }
 
   function renderCompare(rows) {
-    const top = rows.find((r) => r.best.src === "Angebot");
+    const top = rows.find((r) => r.offer) || null;
+    if (!rows.length) {
+      $("#cmp").innerHTML = '<div class="state small"><strong>Alle Händler ausgeblendet</strong><div class="acts"><button type="button" class="linkbtn" data-act="retailers">Alle Händler zeigen</button></div></div>';
+      return top;
+    }
     $("#cmp").innerHTML = rows.map((r) => {
       const o = r.offer;
-      const offerHtml = o
-        ? `<div class="v">${eur.format(o.perCan)}</div><div class="s">${o.active ? "" : "ab " + dfmt.format(new Date(o.validFrom)) + " · "}${o.validTo ? "bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""}${o.variant === "assorted" ? " · versch. Sorten" : ""}</div>`
-        : `<div class="v na">kein Angebot</div>`;
-      const normalHtml = `<div class="v">${eur.format(UVP)}</div><div class="s">UVP</div>`;
-      return `<div class="crow ${r === top ? "top" : ""}">
+      if (!o) {
+        return `<div class="crow none">
+          <div class="who">${esc(r.label)}</div>
+          <div class="mid"><div class="bar" aria-hidden="true"><i style="width:100%"></i></div><div class="s">Kein Angebot, Normalpreis (UVP)</div></div>
+          <div class="pv"><div class="n">${eur.format(UVP)}</div></div>
+        </div>`;
+      }
+      const save = Math.round((1 - o.perCan / UVP) * 100);
+      const meta = [validityText(o), o.loyalty && "nur mit App/Karte", o.cans > 1 && `${o.cans}er-Pack`, state.flavor !== "all" && !exactFlavor(o) && "versch. Sorten"].filter(Boolean);
+      return `<div class="crow${r === top ? " top" : ""}">
         <div class="who">${esc(r.label)}</div>
-        <div class="offer"><div class="k">Angebot</div>${offerHtml}</div>
-        <div class="normal"><div class="k">Normalpreis</div>${normalHtml}</div>
-        <div class="best-v"><div class="n">${eur.format(r.best.v)}</div><div class="src">${r.best.src}</div></div>
+        <div class="mid">
+          <div class="bar" aria-hidden="true"><i style="width:${Math.max(4, Math.min(100, (o.perCan / UVP) * 100)).toFixed(1)}%"></i></div>
+          <div class="s"><span class="badge save">−${save} %</span><span>${esc(meta.join(" · "))}</span></div>
+        </div>
+        <div class="pv"><div class="n">${eur.format(o.perCan)}</div><div class="was">statt ${eur.format(UVP)}</div></div>
       </div>`;
     }).join("");
     return top;
   }
 
-  function render() {
-    const base = offers.filter(variantOk).filter(activeOk);
-    $("#cmpSub").textContent = `${state.flavor === "all" ? "alle Sorten" : flavorLabel(state.flavor)} · 0,5 l · pro Dose · ${state.week === "this" ? "diese Woche" : state.week === "next" ? "nächste Woche" : "alle Angebote"}`;
-    buildChips(base);
-    const rows = compareRows(base);
-    const top = renderCompare(rows);
-
+  function renderBest(top) {
     const best = $("#best");
     best.hidden = false;
-    best.className = "best";
+    best.classList.remove("skel");
+    const fl = state.flavor === "all" ? "Monster" : flavorLabel(state.flavor);
     if (top) {
       const o = top.offer;
-      const tag = state.flavor === "all" ? "Günstigster Preis pro Dose" : `Günstigster Preis für ${flavorLabel(state.flavor)}`;
-      const save = Math.round((1 - o.perCan / UVP) * 100);
-      const what = `${esc(o.title)} · ${eur.format(o.price)}${o.validTo ? " · bis " + dfmt.format(new Date(o.validTo)) : ""}${o.loyalty ? " · nur mit App/Karte" : ""} · ${save} % unter UVP`;
+      const tag = state.flavor === "all" ? "Bester Preis pro Dose" : `Bester Preis pro Dose · ${fl}`;
       best.innerHTML = `
-        <div><div class="tag">${tag}</div><div class="big">${eur.format(o.perCan).replace(/\s?€/, "")}<small>€</small></div></div>
-        <div><div class="who">${esc(top.label)}</div><div class="what">${what}</div></div>
-        <img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.remove()">`;
-    } else {
-      best.innerHTML = `
-        <div><div class="tag">Gerade kein Angebot</div><div class="big">${eur.format(UVP).replace(/\s?€/, "")}<small>€</small></div></div>
-        <div><div class="who">Überall UVP</div><div class="what">In diesem Zeitraum ist ${state.flavor === "all" ? "Monster" : esc(flavorLabel(state.flavor))} nirgends günstiger als 1,59 € pro Dose.</div></div>`;
-    }
-
-    const list = base.filter((o) => !excluded.has(o.rk)).sort(byPerCan);
-    const period = state.week === "this" ? "diese Woche" : state.week === "next" ? "nächste Woche" : "insgesamt";
-    $("#offerCount").textContent = offers.length ? `${list.length} von ${offers.length} ${period}` : "";
-    if (offersError) {
-      $("#list").innerHTML = `<div class="state"><strong>Angebote nicht geladen</strong>${esc(offersError)}<br>Versuch es gleich nochmal.</div>`;
+        <div class="b-price"><div class="tag">${esc(tag)}</div><div class="big">${num(o.perCan)}<small>€</small></div><div class="save">${Math.round((1 - o.perCan / UVP) * 100)} % unter UVP</div></div>
+        <div class="b-info"><div class="who">${esc(top.label)}</div><div class="what">${esc(o.title)}</div>
+          <div class="badges">${flavorBadges(o)}${validityBadge(o)}${o.cans > 1 ? `<span class="badge">${o.cans}er für ${eur.format(o.price)}</span>` : ""}${o.loyalty ? '<span class="badge club">nur mit App/Karte</span>' : ""}</div></div>
+        ${o.image ? `<img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.remove()">` : ""}`;
       return;
     }
-    if (!offers.length) {
-      $("#list").innerHTML = `<div class="state"><strong>Gerade keine Angebote</strong>Diese Woche ist Monster in den Prospekten rund um ${esc(zipInput.value)} nicht im Angebot.</div>`;
-      return;
-    }
-    if (!list.length) {
-      const hint = state.week !== "all" ? "Für diesen Zeitraum gibt es kein passendes Angebot. Probier „Alle“ beim Zeitraum." : state.flavor !== "all" ? `Gerade kein Angebot mit ${esc(flavorLabel(state.flavor))}.${FLAVOR_SELECT_ENABLED ? " Schau unter „Alle Sorten“." : ""}` : "Nimm einen Filter raus.";
-      $("#list").innerHTML = `<div class="state"><strong>Nichts gefunden</strong>${hint}</div>`;
-      return;
-    }
-    const rowHtml = (o) => {
-      const save = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
-      return `<article class="row">
-        <img src="${esc(o.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        <div>
-          <div class="retailer">${esc(o.retailer)}</div>
-          <div class="desc">${esc(o.title)}</div>
-          <div class="badges">${variantBadge(o)}${validity(o)}${save ? `<span class="badge save">−${save} %</span>` : ""}${o.cans > 1 ? `<span class="badge">${o.cans}er</span>` : ""}${o.loyalty ? '<span class="badge club">App/Karte</span>' : ""}</div>
-        </div>
-        <div class="price"><div class="total">${eur.format(o.price)}</div>${o.oldPrice ? `<div class="old">${eur.format(o.oldPrice)}</div>` : ""}</div>
-        <div class="percan">${o.perCan != null ? `<div class="v">${eur.format(o.perCan)}</div><div class="l">/ Dose${o.perLitre ? " · " + eur.format(o.perLitre) + "/l" : ""}</div>` : '<div class="l">kein Literpreis</div>'}</div>
-      </article>`;
-    };
-    if (state.week !== "all") { $("#list").innerHTML = list.map(rowHtml).join(""); return; }
-    // Unter „Alle“: nach Woche gruppiert, je Gruppe nach Preis pro Dose, mit Trennbalken
-    const groups = WEEK_GROUPS.map((g) => ({ ...g, items: list.filter((o) => weekGroup(o) === g.k) })).filter((g) => g.items.length);
-    $("#list").innerHTML = groups.map((g) =>
-      `<div class="wk" role="heading" aria-level="3"><span>${g.label}</span><span class="n">${g.items.length} ${g.items.length === 1 ? "Angebot" : "Angebote"}</span></div>${g.items.map(rowHtml).join("")}`).join("");
+    const where = excluded.size ? "bei den gewählten Händlern" : `rund um ${esc(zipInput.value)}`;
+    best.innerHTML = `
+      <div class="b-price"><div class="tag">Gerade kein Angebot</div><div class="big">${num(UVP)}<small>€</small></div></div>
+      <div class="b-info"><div class="who">Überall UVP</div><div class="what">${state.week === "all" ? "In den aktuellen Prospekten" : "Für " + PERIOD[state.week]} ist ${esc(fl)} ${where} nirgends günstiger als ${eur.format(UVP)} pro Dose.</div></div>`;
   }
+
+  function offerRow(o) {
+    const save = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
+    const pack = o.cans > 1 ? `<span class="badge">${o.cans}er für ${eur.format(o.price)}</span>` : "";
+    // alter Preis pro Dose (bei Packungen anteilig)
+    const was = save ? `<div class="l was">statt <s>${eur.format(o.cans > 1 ? o.oldPrice / o.cans : o.oldPrice)}</s></div>` : "";
+    const price = o.perCan != null
+      ? `<div class="v">${eur.format(o.perCan)}</div><div class="l">pro Dose<span class="pl">${o.perLitre ? " · " + eur.format(o.perLitre) + "/l" : ""}</span></div>${was}`
+      : `<div class="v">${eur.format(o.price)}</div><div class="l">kein Literpreis</div>`;
+    return `<article class="row">
+      <img src="${esc(o.image)}" alt="" loading="lazy" width="64" height="64" onerror="this.style.visibility='hidden'">
+      <div class="info">
+        <div class="retailer">${esc(o.retailer)}</div>
+        <div class="desc">${esc(o.title)}</div>
+        <div class="badges">${flavorBadges(o)}${validityBadge(o)}${pack}${save ? `<span class="badge save">−${save} %</span>` : ""}${o.loyalty ? '<span class="badge club">App/Karte</span>' : ""}</div>
+      </div>
+      <div class="percan">${price}</div>
+    </article>`;
+  }
+
   const WEEK_GROUPS = [
     { k: "this", label: "Diese Woche" }, { k: "next", label: "Nächste Woche" },
     { k: "later", label: "Später" }, { k: "none", label: "Ohne Datum" },
@@ -517,151 +663,314 @@
     return "later";
   }
 
-  /* ---------- Tabs ---------- */
-  function showTab(name) {
-    const karte = MAP_ENABLED && name === "karte";
-    $("#tab-preise").setAttribute("aria-selected", String(!karte));
-    $("#tab-karte").setAttribute("aria-selected", String(karte));
-    $("#view-preise").hidden = karte;
-    $("#view-karte").hidden = !karte;
-    if (location.hash !== (karte ? "#karte" : "")) history.replaceState(null, "", location.pathname + location.search + (karte ? "#karte" : ""));
-    if (karte) initMap();
+  function renderList(base) {
+    const list = base.filter((o) => !excluded.has(o.rk)).sort(byPerCan);
+    $("#offerCount").textContent = offers.length ? `${list.length} von ${offers.length} · ${PERIOD[state.week]}` : "";
+    if (!offers.length) {
+      $("#list").innerHTML = `<div class="state"><strong>Gerade keine Angebote</strong>In den Prospekten rund um ${esc(zipInput.value)} ist Monster gerade nicht im Angebot.</div>`;
+      return;
+    }
+    if (!list.length) {
+      const acts = [
+        state.week !== "all" && '<button type="button" class="linkbtn" data-act="week">Alle Zeiträume zeigen</button>',
+        state.flavor !== "all" && '<button type="button" class="linkbtn" data-act="flavor">Alle Sorten zeigen</button>',
+        excluded.size && '<button type="button" class="linkbtn" data-act="retailers">Alle Händler zeigen</button>',
+      ].filter(Boolean).join("");
+      $("#list").innerHTML = `<div class="state"><strong>Nichts gefunden</strong>Mit diesen Filtern gibt es gerade kein Angebot${state.flavor !== "all" ? " mit " + esc(flavorLabel(state.flavor)) : ""}.<div class="acts">${acts}</div></div>`;
+      return;
+    }
+    if (state.week !== "all") { $("#list").innerHTML = list.map(offerRow).join(""); return; }
+    // Unter „Alle“: nach Woche gruppiert, je Gruppe nach Preis pro Dose, mit Trennbalken
+    $("#list").innerHTML = WEEK_GROUPS.map((g) => ({ ...g, items: list.filter((o) => weekGroup(o) === g.k) })).filter((g) => g.items.length).map((g) =>
+      `<div class="wk" role="heading" aria-level="3"><span>${g.label}</span><span class="n">${g.items.length} ${g.items.length === 1 ? "Angebot" : "Angebote"}</span></div>${g.items.map(offerRow).join("")}`).join("");
   }
-  $("#tab-preise").addEventListener("click", () => showTab("preise"));
-  $("#tab-karte").addEventListener("click", () => showTab("karte"));
+
+  function render() {
+    $("#cmpSub").textContent = `${flavorLabel(state.flavor)} · 0,5 l · pro Dose · ${PERIOD[state.week]}`;
+    $("#view-preise").setAttribute("aria-busy", String(loading));
+    if (loading) {
+      const best = $("#best");
+      best.hidden = false; best.classList.add("skel"); best.innerHTML = "";
+      $("#cmp").innerHTML = '<div class="skeleton"></div>'.repeat(4);
+      $("#list").innerHTML = '<div class="skeleton"></div>'.repeat(2);
+      $("#offerCount").textContent = "";
+      return;
+    }
+    $("#offersSec").hidden = !!offersError;
+    if (offersError) {
+      $("#best").hidden = true;
+      $("#chips").innerHTML = "";
+      $("#cmp").innerHTML = `<div class="state"><strong>Angebote nicht geladen</strong>${esc(offersError)}<div class="acts"><button type="button" class="linkbtn" data-act="retry">Nochmal versuchen</button></div></div>`;
+      return;
+    }
+    const base = offers.filter(variantOk).filter(activeOk);
+    buildChips(base);
+    renderBest(renderCompare(compareRows(base)));
+    renderList(base);
+  }
+
+  // Aktionen in Leer- und Fehlerzuständen
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const act = b.dataset.act;
+    if (act === "retry") load(zipInput.value.trim());
+    if (act === "week") setWeek("all");
+    if (act === "flavor") setFlavor("all");
+    if (act === "retailers") { excluded.clear(); render(); refreshMap(); }
+  });
+
+  /* ---------- Tabs ---------- */
+  const TABS = ["preise", "karte"];
+  function showTab(name, focus) {
+    for (const t of TABS) {
+      const on = t === name;
+      const b = $("#tab-" + t);
+      b.setAttribute("aria-selected", String(on));
+      b.tabIndex = on ? 0 : -1;
+      $("#view-" + t).hidden = !on;
+    }
+    if (focus) $("#tab-" + name).focus();
+    const hash = name === "karte" ? "#karte" : "";
+    if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
+    if (name === "karte") initMap();
+  }
+  $$('[role="tab"]').forEach((b) => {
+    b.addEventListener("click", () => showTab(b.id.slice(4)));
+    b.addEventListener("keydown", (e) => {
+      const i = TABS.indexOf(b.id.slice(4));
+      const j = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: TABS.length - 1 }[e.key];
+      if (j === undefined) return;
+      e.preventDefault();
+      showTab(TABS[(j + TABS.length) % TABS.length], true);
+    });
+  });
+  window.addEventListener("hashchange", () => showTab(location.hash === "#karte" ? "karte" : "preise"));
 
   /* ---------- Karte ---------- */
-  let map, layer;
+  let map, layer, meMarker, mapInit;
   const markers = new Map();   // storeId -> marker
   const places = new Map();    // storeId -> {id,name,brand,lat,lon}
-  let reports = new Map();     // storeId -> summary
+  let reports = new Map();     // storeId -> Zusammenfassung der letzten 7 Tage
   let reportsReady = true;
-  let overpassCtl;
-  const note = (t) => { $("#mapNote").textContent = t || ""; };
-
+  let reportsMsg = "";
+  let reportsAt = 0;
+  let shopsCtl;
+  // Hinweiszeile unter der Karte: Status der Meldungen (falls gestört) und der Läden
+  let shopsMsg = "";
+  const note = (t) => { shopsMsg = t || ""; showNote(); };
+  const showNote = () => { $("#mapNote").textContent = [reportsReady ? "" : reportsMsg, shopsMsg].filter(Boolean).join(" "); };
   const COLORS = { out: "#c53030", ok: "#1e7a46", none: "#8a96a3" };
+  const FRESH_MS = 48 * 3600e3;  // ältere Meldungen werden blasser
+  const EDIT_MS = 3600e3;        // so lange kann man die eigene Meldung ändern (wie im Server)
+
+  function myReport(id) {
+    let v = null;
+    try { v = JSON.parse(store.get(`mp.rep.${state.mapFlavor}.${id}`)); } catch {}
+    if (typeof v === "number") v = { ts: v, s: null }; // altes Format: nur Zeitstempel
+    return v && Date.now() - v.ts < EDIT_MS ? v : null;
+  }
+
   function popupHtml(id) {
     const p = places.get(id) || reports.get(id);
     const r = reports.get(id);
-    const fl = mapFlavor(), short = esc(flavorShort(fl));
-    const mine = Number(store.get("mp.rep." + fl + "." + id) || 0);
-    const locked = Date.now() - mine < 60 * 60 * 1000;
-    let st = "Noch keine Meldung.";
-    if (r) {
-      st = `Zuletzt: <b class="${r.status}">${r.status === "out" ? "Kein " + short : short + " da"}</b> · ${ago(r.lastTs)}<br><span class="sub">7 Tage: ${r.out}× kein ${short}, ${r.ok}× da</span>`;
-    }
+    const short = esc(flavorShort(state.mapFlavor));
+    const mine = myReport(id);
+    const st = r
+      ? `Zuletzt: <b class="${r.status}">${r.status === "out" ? "Kein " + short : short + " da"}</b> · ${ago(r.lastTs)}<br><span class="sub">Letzte 7 Tage: ${r.ok}× da, ${r.out}× kein ${short}</span>`
+      : `Noch keine Meldung für ${short}.`;
+    const acts = reportsReady
+      ? `<div class="acts" role="group" aria-label="${short} melden">
+          <button type="button" class="ok" data-s="ok" aria-pressed="${mine?.s === "ok"}">${short} da</button>
+          <button type="button" class="out" data-s="out" aria-pressed="${mine?.s === "out"}">Kein ${short}</button>
+        </div>
+        <div class="msg" aria-live="polite">${mine ? "Danke! Falsch getippt? Du kannst deine Meldung eine Stunde lang ändern." : ""}</div>`
+      : `<div class="msg">${esc(reportsMsg)}</div>`;
     return `<div class="pop" data-id="${esc(id)}">
       <h3>${esc(p.name)}</h3>
       ${p.brand && p.brand !== p.name ? `<div class="sub">${esc(p.brand)}</div>` : ""}
       <div class="st">${st}</div>
-      ${reportsReady ? `<div class="acts">
-        <button type="button" class="ok" data-s="ok" ${locked ? "disabled" : ""}>${short} da</button>
-        <button type="button" class="out" data-s="out" ${locked ? "disabled" : ""}>Kein ${short}</button>
-      </div>
-      <div class="msg">${locked ? "Danke! Du kannst hier in einer Stunde wieder melden." : ""}</div>` : '<div class="msg">Meldungen sind gerade nicht verfügbar.</div>'}
+      ${acts}
     </div>`;
   }
 
+  function markerStyle(r) {
+    if (!r) return { radius: 7, color: "#fff", weight: 2, fillColor: COLORS.none, fillOpacity: .85 };
+    return { radius: 9, color: "#fff", weight: 2.5, fillColor: COLORS[r.status], fillOpacity: Date.now() - r.lastTs < FRESH_MS ? 1 : .5 };
+  }
+  // Nur Supermärkte der Ketten aus der Händler-Auswahl, abgewählte Ketten ausgeblendet
+  function storeVisible(p) {
+    const c = chainOf(p);
+    return !!c && !excluded.has(c);
+  }
   function upsertMarker(id) {
     const p = places.get(id) || reports.get(id);
-    if (!p) return;
+    if (!p || !storeVisible(p)) {
+      markers.get(id)?.remove();
+      markers.delete(id);
+      return;
+    }
     const r = reports.get(id);
-    const color = r ? COLORS[r.status] : COLORS.none;
     let m = markers.get(id);
-    const style = { radius: r ? 9 : 7, color: "#fff", weight: 2, fillColor: color, fillOpacity: r ? 1 : .85 };
     if (!m) {
-      m = L.circleMarker([p.lat, p.lon], style).addTo(layer);
-      m.bindPopup(() => popupHtml(id), { maxWidth: 260 });
+      m = L.circleMarker([p.lat, p.lon], markerStyle(r)).addTo(layer);
+      m.bindPopup(() => popupHtml(id), { maxWidth: 280 });
       markers.set(id, m);
     } else {
-      m.setStyle(style);
+      m.setStyle(markerStyle(r));
       if (m.isPopupOpen()) m.setPopupContent(popupHtml(id));
     }
     if (r) m.bringToFront();
   }
 
-  const mapFlavor = () => (state.flavor === "all" ? "ultra-white" : state.flavor);
+  function refreshMap() {
+    if (!map) return;
+    new Set([...places.keys(), ...reports.keys(), ...markers.keys()]).forEach(upsertMarker);
+    renderReportList();
+    renderMapChips();
+    countShops();
+  }
+  function renderMapChips() {
+    if (!map) return;
+    const b = map.getBounds();
+    const counts = new Map();
+    places.forEach((p) => { if (p.chain && b.contains([p.lat, p.lon])) counts.set(p.chain, (counts.get(p.chain) || 0) + 1); });
+    const keys = [...chipKeys()].filter((k) => RETAILERS.some(([rk]) => rk === k));
+    $("#mapChips").innerHTML = chipHtml(keys.map((k) => ({ k, label: labelFor(k), n: counts.get(k) || 0, unit: "Läden im Ausschnitt" })));
+  }
+  function countShops() {
+    if (!map || map.getZoom() < 14 || /geladen/.test(shopsMsg)) return;
+    const b = map.getBounds();
+    const n = [...places.values()].filter((p) => storeVisible(p) && b.contains([p.lat, p.lon])).length;
+    note(n ? `${n} ${n === 1 ? "Supermarkt" : "Supermärkte"} in diesem Ausschnitt.` : "Hier gibt es keine Supermärkte der ausgewählten Ketten.");
+  }
+
   function reloadReports() {
-    const old = [...reports.keys()];
+    const prev = reports;
     reports = new Map();
-    old.forEach((id) => { if (places.has(id)) upsertMarker(id); else { markers.get(id)?.remove(); markers.delete(id); } });
+    prev.forEach((_, id) => { if (places.has(id)) upsertMarker(id); else { markers.get(id)?.remove(); markers.delete(id); } });
+    renderReportList();
     loadReports();
   }
   async function loadReports() {
+    const fl = state.mapFlavor;
     try {
-      const r = await fetch("/api/reports?flavor=" + encodeURIComponent(mapFlavor()));
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || r.status);
+      const r = await fetch("/api/reports?flavor=" + encodeURIComponent(fl));
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || "Fehler " + r.status);
+      if (fl !== state.mapFlavor) return; // Sorte inzwischen gewechselt
+      const prev = reports;
       reports = new Map(data.stores.map((s) => [s.id, s]));
+      prev.forEach((_, id) => { if (!reports.has(id)) { if (places.has(id)) upsertMarker(id); else { markers.get(id)?.remove(); markers.delete(id); } } });
       reportsReady = true;
+      reportsAt = Date.now();
       reports.forEach((_, id) => upsertMarker(id));
     } catch (e) {
+      if (fl !== state.mapFlavor) return;
       reportsReady = false;
-      note(String(e.message).includes("nicht eingerichtet") ? "Melden ist noch nicht freigeschaltet (Datenbank fehlt). Die Läden siehst du trotzdem." : "Meldungen konnten nicht geladen werden: " + e.message);
+      reportsMsg = /nicht eingerichtet/.test(e.message)
+        ? "Melden ist noch nicht freigeschaltet. Die Läden siehst du trotzdem."
+        : "Meldungen sind gerade nicht verfügbar: " + netErr(e);
     }
+    showNote();
+    renderReportList();
   }
+
+  function renderReportList() {
+    if (!map) return;
+    const b = map.getBounds();
+    const short = esc(flavorShort(state.mapFlavor));
+    const items = [...reports.values()].filter((r) => storeVisible(places.get(r.id) || r) && b.contains([r.lat, r.lon])).sort((x, y) => y.lastTs - x.lastTs);
+    $("#repCount").textContent = `${flavorLabel(state.mapFlavor)}${items.length ? ` · ${items.length} ${items.length === 1 ? "Laden" : "Läden"}` : ""}`;
+    if (!reportsReady) { $("#repList").innerHTML = `<div class="state small">${esc(reportsMsg)}</div>`; return; }
+    if (!items.length) {
+      $("#repList").innerHTML = `<div class="state small"><strong>Hier noch keine Meldungen</strong>Tipp auf der Karte auf einen Supermarkt und sag Bescheid, ob es dort ${short} gibt.</div>`;
+      return;
+    }
+    $("#repList").innerHTML = items.slice(0, 40).map((r) => {
+      const p = places.get(r.id) || r;
+      return `<button type="button" class="rrow" data-id="${esc(r.id)}">
+        <i class="dot ${r.status}${Date.now() - r.lastTs < FRESH_MS ? "" : " old"}" aria-hidden="true"></i>
+        <span><span class="nm">${esc(p.name)}</span>${p.brand && p.brand !== p.name ? `<span class="sub">${esc(p.brand)}</span>` : ""}</span>
+        <span class="st"><b class="${r.status}">${r.status === "out" ? "Kein " + short : short + " da"}</b><span>${ago(r.lastTs)} · ${r.ok + r.out}× gemeldet</span></span>
+      </button>`;
+    }).join("");
+  }
+  $("#repList").addEventListener("click", (e) => {
+    const b = e.target.closest(".rrow");
+    const r = b && reports.get(b.dataset.id);
+    if (!r || !map) return;
+    map.setView([r.lat, r.lon], Math.max(map.getZoom(), 16));
+    markers.get(r.id)?.openPopup();
+    $("#map").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  });
 
   const shopCache = new Map();
   // Fallback: Nominatim direkt aus dem Browser, falls der Server-Abruf scheitert
   async function shopsDirect([s, w, n, e], signal) {
-    const out = new Map();
-    for (const q of ["[supermarket]", "[convenience]", "[kiosk]", "[fuel]"]) {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=50&bounded=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent(q)}`, { signal });
-      if (!r.ok) throw new Error("Status " + r.status);
-      for (const x of await r.json()) {
-        const id = `${x.osm_type}/${x.osm_id}`;
-        out.set(id, { id, name: x.name || (x.type === "fuel" ? "Tankstelle" : "Laden"), brand: "", kind: x.type, lat: +x.lat, lon: +x.lon });
-      }
-    }
-    return [...out.values()];
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&bounded=1&extratags=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent("[supermarket]")}`, { signal });
+    if (!r.ok) throw new Error("Status " + r.status);
+    return (await r.json()).map((x) => {
+      const p = { id: `${x.osm_type}/${x.osm_id}`, name: x.name || x.extratags?.brand || "", brand: x.extratags?.brand || "", lat: +x.lat, lon: +x.lon };
+      return { ...p, chain: chainOf(p) };
+    }).filter((p) => p.chain);
   }
   async function loadShops() {
     if (!map) return;
-    if (map.getZoom() < 14) { note("Reinzoomen, um alle Läden zu sehen. Gemeldete Läden siehst du immer."); return; }
+    if (map.getZoom() < 14) { note("Reinzoomen, um alle Supermärkte zu sehen. Gemeldete siehst du immer."); return; }
     const b = map.getBounds();
     const bbox = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map((x) => x.toFixed(2)).join(",");
-    overpassCtl?.abort();
-    overpassCtl = new AbortController();
-    note("Läden werden geladen …");
+    shopsCtl?.abort();
+    shopsCtl = new AbortController();
+    const signal = shopsCtl.signal;
+    note("Supermärkte werden geladen …");
     try {
       let shops = shopCache.get(bbox);
       if (!shops) {
         try {
-          const r = await fetch("/api/shops?bbox=" + bbox, { signal: overpassCtl.signal });
-          const data = await r.json();
+          const r = await fetch("/api/shops?bbox=" + bbox, { signal });
+          const data = await r.json().catch(() => ({}));
           if (!r.ok) throw new Error(data.error || r.status);
           shops = data.shops;
         } catch (e) {
           if (e.name === "AbortError") throw e;
-          shops = await shopsDirect(bbox.split(",").map(Number), overpassCtl.signal);
+          shops = await shopsDirect(bbox.split(",").map(Number), signal);
         }
         shopCache.set(bbox, shops);
       }
-      for (const sh of shops) { places.set(sh.id, sh); upsertMarker(sh.id); }
-      note(shops.length ? `${shops.length} Läden in diesem Ausschnitt.` : "Hier sind keine Läden eingetragen.");
+      for (const sh of shops) { if (!sh.chain) sh.chain = chainOf(sh); places.set(sh.id, sh); upsertMarker(sh.id); }
+      shopsMsg = "";
+      renderMapChips();
+      countShops();
     } catch (e) {
-      if (e.name !== "AbortError") note("Läden konnten nicht geladen werden. Verschieb die Karte etwas, um es nochmal zu versuchen.");
+      if (e.name !== "AbortError") note("Supermärkte konnten nicht geladen werden. Verschieb die Karte etwas, um es nochmal zu versuchen.");
     }
   }
 
   async function sendReport(id, status, popEl) {
     const p = places.get(id) || reports.get(id);
-    popEl.querySelectorAll("button").forEach((b) => (b.disabled = true));
-    popEl.querySelector(".msg").textContent = "Wird gesendet …";
+    if (!p) return;
+    const fl = state.mapFlavor;
+    const btns = $$("button", popEl);
+    const msg = $(".msg", popEl);
+    btns.forEach((b) => (b.disabled = true));
+    msg.textContent = "Wird gesendet …";
     try {
       const r = await fetch("/api/reports", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ storeId: id, name: p.name, brand: p.brand, lat: p.lat, lon: p.lon, status, flavor: mapFlavor() }),
+        body: JSON.stringify({ storeId: id, name: p.name, brand: p.brand, lat: p.lat, lon: p.lon, status, flavor: fl }),
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || r.status);
-      store.set("mp.rep." + mapFlavor() + "." + id, String(Date.now()));
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || "Fehler " + r.status);
+      store.set(`mp.rep.${fl}.${id}`, JSON.stringify({ ts: Date.now(), s: status }));
+      if (fl !== state.mapFlavor) return;
       if (data.store) reports.set(id, data.store);
       upsertMarker(id);
+      renderReportList();
     } catch (e) {
-      popEl.querySelectorAll("button").forEach((b) => (b.disabled = false));
-      popEl.querySelector(".msg").textContent = "Fehler: " + e.message;
+      btns.forEach((b) => (b.disabled = false));
+      msg.textContent = netErr(e);
     }
   }
 
@@ -669,11 +978,12 @@
     try {
       const r = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zip)}&country=de&format=json&limit=1`);
       const [hit] = await r.json();
-      if (hit) map.setView([+hit.lat, +hit.lon], 14);
+      if (hit && map) { map.setView([+hit.lat, +hit.lon], 14); return true; }
     } catch {}
+    return false;
   }
 
-  // Leaflet wird erst geladen, wenn die Karte freigeschaltet ist und geöffnet wird
+  // Leaflet wird erst geladen, wenn die Karte geöffnet wird
   let leafletLoading;
   function loadLeaflet() {
     if (window.L) return Promise.resolve();
@@ -689,54 +999,67 @@
       js.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
       js.crossOrigin = "";
       js.onload = () => resolve();
-      js.onerror = () => { leafletLoading = null; reject(new Error("Leaflet")); };
+      js.onerror = () => { leafletLoading = null; js.remove(); reject(new Error("Leaflet")); };
       document.head.appendChild(js);
     });
     return leafletLoading;
   }
 
-  async function initMap() {
-    if (!MAP_ENABLED) return;
-    if (map) { setTimeout(() => map.invalidateSize(), 0); return; }
-    try { await loadLeaflet(); } catch { note("Karte konnte nicht geladen werden."); return; }
-    if (map) return;
-    map = L.map("map", { zoomControl: true }).setView([49.0069, 8.4037], 13);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19, className: "tiles-white",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
-    }).addTo(map);
-    layer = L.layerGroup().addTo(map);
-    let t;
-    map.on("moveend", () => { clearTimeout(t); t = setTimeout(loadShops, 400); });
-    map.getContainer().addEventListener("click", (e) => {
-      const btn = e.target.closest(".pop button[data-s]");
-      if (!btn) return;
-      const pop = btn.closest(".pop");
-      sendReport(pop.dataset.id, btn.dataset.s, pop);
-    });
-    centerOnZip(zipInput.value.trim());
-    loadReports();
+  function initMap() {
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 0);
+      if (Date.now() - reportsAt > 2 * 60e3) loadReports();
+      return Promise.resolve();
+    }
+    mapInit ??= (async () => {
+      try { await loadLeaflet(); } catch { mapInit = null; note("Karte konnte nicht geladen werden. Prüf deine Verbindung und öffne den Tab nochmal."); return; }
+      map = L.map("map", { zoomControl: true }).setView([49.0069, 8.4037], 14);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19, className: "tiles-white",
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende',
+      }).addTo(map);
+      layer = L.layerGroup().addTo(map);
+      let t;
+      map.on("moveend", () => { clearTimeout(t); t = setTimeout(loadShops, 400); renderReportList(); renderMapChips(); });
+      map.getContainer().addEventListener("click", (e) => {
+        const btn = e.target.closest(".pop button[data-s]");
+        if (!btn || btn.getAttribute("aria-pressed") === "true") return;
+        const pop = btn.closest(".pop");
+        sendReport(pop.dataset.id, btn.dataset.s, pop);
+      });
+      renderMapChips();
+      loadReports();
+      if (!(await centerOnZip(zipInput.value.trim()))) loadShops();
+    })();
+    return mapInit;
   }
 
   $("#locate").addEventListener("click", () => {
+    const btn = $("#locate");
     if (!navigator.geolocation) return note("Dein Browser kann keinen Standort liefern.");
+    btn.setAttribute("aria-busy", "true");
     note("Standort wird gesucht …");
     navigator.geolocation.getCurrentPosition(
-      async (pos) => { await initMap(); map?.setView([pos.coords.latitude, pos.coords.longitude], 15); },
-      () => note("Standort nicht freigegeben. Gib oben eine PLZ ein."),
-      { enableHighAccuracy: true, timeout: 10000 }
+      async (pos) => {
+        btn.removeAttribute("aria-busy");
+        await initMap();
+        if (!map) return;
+        const ll = [pos.coords.latitude, pos.coords.longitude];
+        if (meMarker) meMarker.setLatLng(ll);
+        else meMarker = L.circleMarker(ll, { radius: 8, color: "#fff", weight: 3, fillColor: "#0f6c9a", fillOpacity: 1, interactive: false }).addTo(map);
+        map.setView(ll, 16);
+      },
+      (err) => {
+        btn.removeAttribute("aria-busy");
+        note(err.code === 1 ? "Standort nicht freigegeben. Gib oben eine PLZ ein." : "Standort konnte nicht ermittelt werden.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   });
 
+  syncFlavorUi();
   load(zipInput.value);
-  if (FLAVOR_SELECT_ENABLED) $("#flavorWrap").hidden = false;
-  if (MAP_ENABLED) {
-    $(".tabs").hidden = false;
-    $("#footMap").hidden = false;
-    if (location.hash === "#karte") showTab("karte");
-  } else if (location.hash === "#karte") {
-    history.replaceState(null, "", location.pathname + location.search);
-  }
+  showTab(location.hash === "#karte" ? "karte" : "preise");
 })();
 </script>
 </body>

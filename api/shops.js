@@ -1,9 +1,10 @@
-// Läden im Kartenausschnitt aus OpenStreetMap (über Nominatim), serverseitig abgefragt,
-// damit der Browser nicht an CORS oder Overpass-Limits scheitert. Ergebnis wird 1 Tag gecacht.
+// Supermärkte der bekannten Ketten (lib/chains.js) im Kartenausschnitt aus OpenStreetMap, serverseitig abgefragt,
+// damit der Browser nicht an CORS oder Rate-Limits scheitert. Zuerst Nominatim (zuverlässiger), bei Ausfall Overpass.
+// Ergebnis wird 1 Tag gecacht.
+import { chainOf } from "../lib/chains.js";
 
 const ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
 ];
 const UA = "monster-preise/1.0 (private fan project; vercel)";
@@ -19,6 +20,9 @@ export function parseBbox(raw) {
   return [s, w, n, e];
 }
 
+const round5 = (x) => Math.round(Number(x) * 1e5) / 1e5;
+
+// Overpass-Elemente -> Läden, nur Supermärkte der bekannten Ketten
 export function compact(elements) {
   const out = [];
   for (const el of elements || []) {
@@ -26,40 +30,67 @@ export function compact(elements) {
     if (lat == null || lon == null) continue;
     const t = el.tags || {};
     const brand = t.brand || t.operator || "";
-    const kind = t.amenity === "fuel" ? "fuel" : t.shop || "shop";
-    const name = t.name || brand || (kind === "fuel" ? "Tankstelle" : "Laden");
-    out.push({ id: `${el.type}/${el.id}`, name, brand, kind, lat: Math.round(lat * 1e5) / 1e5, lon: Math.round(lon * 1e5) / 1e5 });
+    const chain = chainOf({ name: t.name, brand, wikidata: t["brand:wikidata"], lat, lon });
+    if (!chain) continue;
+    out.push({ id: `${el.type}/${el.id}`, name: t.name || brand, brand, chain, lat: round5(lat), lon: round5(lon) });
   }
   return out;
 }
 
-// Nominatim liefert pro Kategorie bis zu 50 Treffer im Ausschnitt und ist deutlich zuverlässiger als Overpass.
+// Nominatim liefert höchstens 40 Treffer pro Anfrage. Bei Zoom 14 reicht das für die Supermärkte im Ausschnitt.
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
-const CATEGORIES = ["[supermarket]", "[convenience]", "[kiosk]", "[fuel]"];
 
 export function compactNominatim(list) {
-  return (list || []).filter((x) => x.lat && x.lon).map((x) => {
-    const kind = x.type === "fuel" ? "fuel" : x.type || "shop";
-    const name = x.name || (kind === "fuel" ? "Tankstelle" : "Laden");
-    return { id: `${x.osm_type}/${x.osm_id}`, name, brand: x.extratags?.brand || "", kind, lat: Math.round(Number(x.lat) * 1e5) / 1e5, lon: Math.round(Number(x.lon) * 1e5) / 1e5 };
-  });
+  const out = [];
+  for (const x of list || []) {
+    if (!x.lat || !x.lon) continue;
+    const brand = x.extratags?.brand || "";
+    const chain = chainOf({ name: x.name, brand, wikidata: x.extratags?.["brand:wikidata"], lat: x.lat, lon: x.lon });
+    if (!chain) continue;
+    out.push({ id: `${x.osm_type}/${x.osm_id}`, name: x.name || brand, brand, chain, lat: round5(x.lat), lon: round5(x.lon) });
+  }
+  return out;
 }
 
-async function nominatim(bbox, fetchImpl) {
-  const [s, w, n, e] = bbox;
-  const out = [];
-  for (const q of CATEGORIES) {
-    const url = `${NOMINATIM}?format=jsonv2&limit=50&bounded=1&extratags=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent(q)}`;
-    const res = await fetchImpl(url, { headers: { "user-agent": UA, "accept-language": "de" }, signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error(`nominatim: ${res.status}`);
-    out.push(...compactNominatim(await res.json()));
-  }
+async function nominatim([s, w, n, e], fetchImpl) {
+  const url = `${NOMINATIM}?format=jsonv2&limit=40&bounded=1&extratags=1&viewbox=${w},${n},${e},${s}&q=${encodeURIComponent("[supermarket]")}`;
+  const res = await fetchImpl(url, { headers: { "user-agent": UA, "accept-language": "de" }, signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`nominatim: ${res.status}`);
   const seen = new Set();
-  return out.filter((x) => (seen.has(x.id) ? false : seen.add(x.id)));
+  return compactNominatim(await res.json()).filter((x) => (seen.has(x.id) ? false : seen.add(x.id)));
+}
+
+export function overpassQuery([s, w, n, e]) {
+  const b = `(${s},${w},${n},${e})`;
+  return `[out:json][timeout:15];nwr["shop"="supermarket"]${b};out center tags 400;`;
+}
+
+async function overpass(bbox, fetchImpl) {
+  let last;
+  for (const url of ENDPOINTS) {
+    try {
+      const res = await fetchImpl(url, {
+        method: "POST",
+        headers: { "user-agent": UA, "content-type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(overpassQuery(bbox)),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!res.ok) throw new Error(`overpass: ${res.status}`);
+      return compact((await res.json()).elements);
+    } catch (e) {
+      last = e;
+    }
+  }
+  throw last;
 }
 
 export async function fetchShops(bbox, fetchImpl = fetch) {
-  return nominatim(bbox, fetchImpl);
+  try {
+    return await nominatim(bbox, fetchImpl);
+  } catch (e) {
+    console.warn("Nominatim nicht erreichbar, nehme Overpass:", e.message);
+    return overpass(bbox, fetchImpl);
+  }
 }
 
 export default async function handler(req, res) {
