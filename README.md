@@ -4,8 +4,12 @@ WebApp im hellen White-Look, die die aktuellen Monster-Energy-Angebote aus den S
 
 Dazu gibt es eine **Karte**, auf der Nutzer pro Laden melden können, ob es dort gerade Ultra White gibt. Meldungen gelten 7 Tage.
 
+Die Karte ist noch in Entwicklung und in Produktion ausgeblendet. Lokal (`localhost`) ist sie automatisch sichtbar, sonst mit `?dev=karte` an der URL. Freischalten: `MAP_ENABLED` in `index.html` auf `true` setzen.
+
+Angebote von Scheck-in Center werden komplett herausgefiltert (`BLOCKED_RETAILERS` in `api/offers.js`).
+
 ## Aufbau
-- `index.html`: Oberfläche (statisch, kein Build), Karte mit Leaflet, Läden aus OpenStreetMap (Overpass)
+- `index.html`: Oberfläche (statisch, kein Build), Karte mit Leaflet (wird nur bei freigeschalteter Karte nachgeladen), Läden aus OpenStreetMap (Overpass)
 - `api/offers.js`: holt Angebote über die inoffizielle Marktguru-API (`/api/offers?zip=76137`), 30 min Edge-Cache
 - `api/reports.js`: Meldungen lesen/schreiben (`GET`/`POST /api/reports`), gespeichert in Neon Postgres (`mp_reports`), max. 30 Meldungen pro IP und Stunde
 - `api/prices.js`: Nutzer-Regalpreise je Kette (`mp_prices`), Median der letzten 30 Tage

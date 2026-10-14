@@ -4,13 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Monster-Preise</title>
-<meta name="description" content="Aktuelle Monster-Energy-Angebote in deiner Nähe, Ultra White zuerst, plus Karte mit Nutzer-Meldungen, wo White ausverkauft ist.">
+<meta name="description" content="Aktuelle Monster-Energy-Angebote in deiner Nähe, Ultra White zuerst, mit Preisvergleich pro Supermarkt.">
 <meta name="theme-color" content="#f4f6f8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffffff' stroke='%23c9d1d9'/%3E%3Crect x='11' y='5' width='10' height='22' rx='3' fill='%23e9eef2' stroke='%230e1116' stroke-width='1.6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   :root {
     color-scheme: light;
@@ -189,7 +188,8 @@
     </form>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Ansicht">
+  <!-- Tabs nur sichtbar, solange die Karte in Entwicklung ist und MAP_ENABLED gilt -->
+  <nav class="tabs" role="tablist" aria-label="Ansicht" hidden>
     <button role="tab" id="tab-preise" aria-selected="true" aria-controls="view-preise">Preise</button>
     <button role="tab" id="tab-karte" aria-selected="false" aria-controls="view-karte">Karte</button>
   </nav>
@@ -230,7 +230,7 @@
     <main class="list" id="list" aria-live="polite"></main>
   </section>
 
-  <!-- KARTE -->
+  <!-- KARTE (in Entwicklung, in Produktion ausgeblendet, siehe MAP_ENABLED) -->
   <section id="view-karte" role="tabpanel" aria-labelledby="tab-karte" hidden>
     <div class="map-head">
       <p>Tipp auf einen Laden und melde, ob es dort gerade <b id="mapFlavor">Ultra White</b> gibt. Meldungen gelten 7 Tage.</p>
@@ -248,12 +248,11 @@
 
   <footer>
     Angebote: Prospektdaten über marktguru.de, ohne Gewähr. Preis pro Dose aus dem Literpreis berechnet (0,5 l, sofern nicht anders angegeben). „Versch. Sorten“ heißt: White ist wahrscheinlich dabei, aber nicht garantiert.
-    Läden: © OpenStreetMap-Mitwirkende. Karte: © OpenStreetMap. Meldungen kommen von Nutzern.
+    <span id="footMap" hidden>Läden: © OpenStreetMap-Mitwirkende. Karte: © OpenStreetMap.</span> Meldungen kommen von Nutzern.
     Private Fan-Seite, kein offizielles Angebot von Monster Energy.
   </footer>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 (() => {
   const $ = (s) => document.querySelector(s);
@@ -263,6 +262,9 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   };
+  // Karte ist noch in Entwicklung: in Produktion aus, lokal (localhost) oder mit ?dev=karte an
+  const MAP_ENABLED = ["localhost", "127.0.0.1"].includes(location.hostname)
+    || new URLSearchParams(location.search).get("dev") === "karte";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   /* ---------- Händler ---------- */
@@ -567,7 +569,7 @@
 
   /* ---------- Tabs ---------- */
   function showTab(name) {
-    const karte = name === "karte";
+    const karte = MAP_ENABLED && name === "karte";
     $("#tab-preise").setAttribute("aria-selected", String(!karte));
     $("#tab-karte").setAttribute("aria-selected", String(karte));
     $("#view-preise").hidden = karte;
@@ -721,9 +723,33 @@
     } catch {}
   }
 
-  function initMap() {
+  // Leaflet wird erst geladen, wenn die Karte freigeschaltet ist und geöffnet wird
+  let leafletLoading;
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve();
+    leafletLoading ??= new Promise((resolve, reject) => {
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      css.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+      css.crossOrigin = "";
+      document.head.appendChild(css);
+      const js = document.createElement("script");
+      js.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      js.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+      js.crossOrigin = "";
+      js.onload = () => resolve();
+      js.onerror = () => { leafletLoading = null; reject(new Error("Leaflet")); };
+      document.head.appendChild(js);
+    });
+    return leafletLoading;
+  }
+
+  async function initMap() {
+    if (!MAP_ENABLED) return;
     if (map) { setTimeout(() => map.invalidateSize(), 0); return; }
-    if (!window.L) { note("Karte konnte nicht geladen werden."); return; }
+    try { await loadLeaflet(); } catch { note("Karte konnte nicht geladen werden."); return; }
+    if (map) return;
     map = L.map("map", { zoomControl: true }).setView([49.0069, 8.4037], 13);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19, className: "tiles-white",
@@ -746,7 +772,7 @@
     if (!navigator.geolocation) return note("Dein Browser kann keinen Standort liefern.");
     note("Standort wird gesucht …");
     navigator.geolocation.getCurrentPosition(
-      (pos) => { initMap(); map.setView([pos.coords.latitude, pos.coords.longitude], 15); },
+      async (pos) => { await initMap(); map?.setView([pos.coords.latitude, pos.coords.longitude], 15); },
       () => note("Standort nicht freigegeben. Gib oben eine PLZ ein."),
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -754,7 +780,13 @@
 
   load(zipInput.value);
   loadPrices();
-  if (location.hash === "#karte") showTab("karte");
+  if (MAP_ENABLED) {
+    $(".tabs").hidden = false;
+    $("#footMap").hidden = false;
+    if (location.hash === "#karte") showTab("karte");
+  } else if (location.hash === "#karte") {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
 })();
 </script>
 </body>

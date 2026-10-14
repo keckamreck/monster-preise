@@ -187,6 +187,12 @@ async function searchAll(zip, keys, fetchImpl) {
   return lists.flat();
 }
 
+// Händler, die komplett ausgeblendet werden (z. B. Scheck-in Center)
+const BLOCKED_RETAILERS = /scheck[\s-]*in/i;
+export function isBlockedRetailer(o) {
+  return (o?.advertisers || []).some((a) => BLOCKED_RETAILERS.test(`${a?.name ?? ""} ${a?.uniqueName ?? ""}`));
+}
+
 export async function fetchOffers(zip, fetchImpl = fetch) {
   let keys = await getKeys(fetchImpl);
   let results = await searchAll(zip, keys, fetchImpl);
@@ -198,7 +204,7 @@ export async function fetchOffers(zip, fetchImpl = fetch) {
   const now = new Date();
   const seen = new Set();
   return results
-    .filter(isMonster)
+    .filter((o) => isMonster(o) && !isBlockedRetailer(o))
     .map((o) => normalize(o, now))
     .filter((o) => {
       if (seen.has(o.id)) return false;
