@@ -11,6 +11,6 @@
     "@neondatabase/serverless": "^1.0.0"
   },
   "scripts": {
-    "test": "node test/run.mjs && node test/shops.mjs && node test/db.mjs"
+    "test": "node test/run.mjs && node test/flavors.mjs && node test/chains.mjs && node test/hours.mjs && node test/shops.mjs && node test/db.mjs"
   }
 }

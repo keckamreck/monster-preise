@@ -1,7 +1,8 @@
 // Von Nutzern gemeldete Regalpreise für Monster 0,5 l, je Handelskette.
 import { getSql, ensureSchema, ipHash, overLimit, NOT_CONFIGURED, parseBody } from "../lib/db.js";
+import { CHAINS as KNOWN } from "../lib/chains.js";
 
-export const CHAINS = ["aldi-sued", "aldi-nord", "edeka", "kaufland", "lidl", "netto", "norma", "penny", "rewe", "globus"];
+export const CHAINS = KNOWN.map(([k]) => k);
 const RATE_LIMIT = 30;
 
 export function parsePrice(raw) {

@@ -60,11 +60,14 @@ export function isMonster(o) {
 }
 
 // Sorten-Erkennung. Ergebnis: Liste von Sorten-Schlüsseln, oder ["*"] wenn "versch. Sorten" bzw. keine Sorte genannt.
+// Die Schlüssel müssen zu FLAVOR_GROUPS in index.html passen (test/flavors.mjs prüft das).
 export const FLAVORS = [
-  ["ultra-white", /ultra\s*white|zero\s*ultra|ultra\s*zero|\bwhite\b/],
-  ["zero-sugar", /zero\s*(sugar|zucker)/],
+  ["ultra-white", /ultra\s*white|zero\s*ultra|ultra\s*zero|\bwhite\b(?!\s*pineapple)/],
+  // Zero Sugar nur als eigene Sorte (am Anfang, nach „Monster/Energy/Drink“ oder in einer Aufzählung),
+  // nicht als Zusatz wie bei „Ultra White Zero Zucker“ oder „Lando Norris Zero Sugar“
+  ["zero-sugar", /(?:^|[,;:(/]|\boder|\bund|\bmonster|\benergy|\bdrink)\s*zero\s*(?:sugar|zucker)/],
   ["ultra-paradise", /paradise/],
-  ["ultra-rosa", /\brosa\b/],
+  ["ultra-rosa", /\bros[aá](?![a-z])/],
   ["ultra-fiesta", /fiesta/],
   ["ultra-violet", /violet/],
   ["ultra-watermelon", /watermelon|wassermelone/],
@@ -72,15 +75,20 @@ export const FLAVORS = [
   ["ultra-citron", /citron/],
   ["ultra-gold", /\bgold\b/],
   ["ultra-blue", /blue\s*hawaiian|ultra\s*blue/],
+  ["ultra-peachy-keen", /peachy/],
+  ["ultra-ruby-red", /ruby/],
   ["mango-loco", /mango/],
   ["pipeline-punch", /pipeline/],
   ["pacific-punch", /pacific/],
+  ["rio-punch", /rio\s*punch/],
   ["khaotic", /khaotic/],
   ["monarch", /monarch/],
   ["bad-apple", /bad\s*apple/],
   ["aussie-lemonade", /aussie|lemonade/],
   ["ripper", /ripper/],
   ["lewis-hamilton", /hamilton|lh\s*44/],
+  ["lando-norris", /lando|norris/],
+  ["the-doctor", /\bdoctor\b|\bvr\s*46|\brossi\b/],
   ["assault", /assault/],
   ["nitro", /nitro/],
   ["reserve", /reserve/],
@@ -91,7 +99,13 @@ export const FLAVORS = [
 export function detectFlavors(o) {
   const t = `${o?.product?.name ?? ""} ${o?.description ?? ""}`.toLowerCase();
   const assorted = /versch|sortiert|sorten|div\.|diverse|verschiedene|auswahl/.test(t);
-  const hits = FLAVORS.filter(([, re]) => re.test(t)).map(([k]) => k);
+  let hits = FLAVORS.filter(([, re]) => re.test(t)).map(([k]) => k);
+  // „Ultra Fiesta Mango“ ist kein Mango Loco
+  if (hits.includes("ultra-fiesta") && !/loco/.test(t)) hits = hits.filter((k) => k !== "mango-loco");
+  // „Reserve Watermelon“ ist Reserve, nicht Ultra Watermelon
+  if (hits.includes("reserve") && !/ultra\s*watermelon/.test(t)) hits = hits.filter((k) => k !== "ultra-watermelon");
+  // „Monster Energy Ultra“ ohne weitere Sorte ist in Deutschland die weiße Dose
+  if (!assorted && !hits.some((k) => k !== "zero-sugar") && /\bultra\b/.test(t)) hits = ["ultra-white"];
   if (assorted || !hits.length) return ["*", ...hits];
   return hits;
 }
